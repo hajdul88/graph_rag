@@ -1,6 +1,6 @@
 import os
 import asyncio
-from src.file_readers.factory import FileReaderFactory
+from file_readers.factory import FileReaderFactory
 
 class DirectoryFileReader:
     def __init__(self, directory_path: str, mode: str = "size", chunk_size: int = 100, txt_separator: str = None, overlap_size: int = 0):
