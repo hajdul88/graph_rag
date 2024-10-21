@@ -1,0 +1,48 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      neo4j:
+        image: neo4j:latest
+        ports:
+          - 7687:7687
+        options: --env NEO4J_AUTH=neo4j/test1234 --env NEO4JLABS_PLUGINS='["graph-data-science"]'
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Python environment
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.9
+
+      # Step 3: Install Poetry and project dependencies
+      - name: Install Poetry dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry install
+
+      # Step 4: Run tests using pytest
+      - name: Run tests
+        run: |
+          poetry run pytest
+
+      # Step 5: Run the RAG pipeline script
+      - name: Run Graph RAG pipeline
+        run: |
+          poetry run python src/run_pipeline.py

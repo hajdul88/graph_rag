@@ -64,5 +64,5 @@ The ingestion pipeline is designed to handle large document ingestion and is bui
 First, clone the repository and navigate to the project directory:
 
 ```bash
-git clone https://github.com/yourusername/graph-rag-ingestion.git
-cd graph-rag-ingestion
+git clone https://github.com/hajdul88/graph-rag.git
+cd graph-rag
