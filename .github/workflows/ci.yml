@@ -46,3 +46,4 @@ jobs:
       - name: Run Graph RAG pipeline
         run: |
           poetry run python src/run_pipeline.py
+        working-directory: ./src
