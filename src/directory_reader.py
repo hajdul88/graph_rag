@@ -17,7 +17,7 @@ class DirectoryFileReader:
         with optional overlap between chunks.
 
         Yields:
-            str: The chunked content of each file.
+            Tuple[str, str]: The file and the actual chunk as strings
         """
         if self.chunk_size <= self.overlap_size:
             raise ValueError(f"The chunk size {self.chunk_size} is smaller than or equal to the overlapping size {self.overlap_size}.")
@@ -29,7 +29,6 @@ class DirectoryFileReader:
                 reader = FileReaderFactory.get_reader(file_path)
 
                 # Choose the separator based on the file type
-
                 if file_name.endswith(".txt"):
                     separator = self.txt_separator
                 else:
@@ -37,7 +36,7 @@ class DirectoryFileReader:
 
                 # Read the file with the appropriate separator
                 async for chunk in reader.read(file_path, mode=self.mode, chunk_size=self.chunk_size, separator=separator, overlap_size=self.overlap_size):
-                    yield chunk
+                    yield file_name, chunk
             except ValueError:
                 continue
                 # Skip unsupported files or errors

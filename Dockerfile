@@ -1,31 +1,29 @@
-# Use the official Python image from Docker Hub as the base image
 FROM python:3.9-slim
 
-# Set the working directory inside the container
 WORKDIR /app
 
-# Copy the pyproject.toml and poetry.lock to the working directory inside the container
 COPY pyproject.toml poetry.lock /app/
 
-# Install Poetry (a dependency manager for Python)
 RUN pip install poetry
 
-# Install the dependencies listed in pyproject.toml
 RUN poetry install --no-dev
 
-# Copy the rest of the application code to the container
+
 COPY ./src /app/src
 COPY ./tests /app/tests
 COPY ./example_data /app/example_data
 COPY README.md /app/
 
-# Set the working directory to the src directory
 WORKDIR /app/src
 
-# Set environment variables (optional)
-ENV NEO4J_URI=bolt://neo4j:7687
-ENV NEO4J_USER=neo4j
-ENV NEO4J_PASSWORD=test
+ENV directory="../example_data"
+ENV mode="size"
+ENV chunk_size="300"
+ENV overlap_size="20"
+ENV txt_separator="\n\n"
+ENV NEO4J_URI="bolt://neo4j:7687"
+ENV NEO4J_USER="neo4j"
+ENV NEO4J_PASSWORD="test1234"
 
-# Define the command that runs your application when the container starts
+
 CMD ["poetry", "run", "python", "run_pipeline.py"]
