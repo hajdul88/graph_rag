@@ -13,7 +13,11 @@ asyncio = "^3.4.3"
 pytest = "^8.3.3"
 aiofiles = "^24.1.0"
 pymupdf = "^1.24.11"
-
+langchain = "^0.3.3"
+langchain-community ="^0.3.2"
+beir = "^2.0.0"
+transformers = "^4.40.2"
+torch = "^2.5.0"
 
 [tool.poetry.group.dev.dependencies]
 

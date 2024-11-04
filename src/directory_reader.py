@@ -37,6 +37,7 @@ class DirectoryFileReader:
                 # Read the file with the appropriate separator
                 async for chunk in reader.read(file_path, mode=self.mode, chunk_size=self.chunk_size, separator=separator, overlap_size=self.overlap_size):
                     yield file_name, chunk
+
             except ValueError:
                 continue
                 # Skip unsupported files or errors
