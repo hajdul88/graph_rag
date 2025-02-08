@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "graph-rag"
+version = "0.1.0"
+description = ""
+authors = ["hajdul88 <52442977+hajdul88@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+neo4j = "^5.25.0"
+python-dotenv = "^1.0.1"
+asyncio = "^3.4.3"
+pytest = "^8.3.3"
+aiofiles = "^24.1.0"
+pymupdf = "^1.24.11"
+torch = "^2.5.0"
+transformers = "^4.40.2"
+huggingface_hub = "^0.25.2"
+pandas = "^2.2.3"
+ollama = "^0.4.6"
+
+[tool.poetry.group.dev.dependencies]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

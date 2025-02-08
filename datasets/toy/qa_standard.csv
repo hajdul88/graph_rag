@@ -1,0 +1,11 @@
+query,type,evidence_list,answer
+Were Scott Derrickson and Ed Wood of the same nationality?,comparison,"['Scott Derrickson', 'Ed Wood']",yes
+What government position was held by the woman who portrayed Corliss Archer in the film Kiss and Tell?,bridge,"['Kiss and Tell (1945 film)', 'Shirley Temple']",Chief of Protocol
+"What science fantasy young adult series, told in first person, has a set of companion books narrating the stories of enslaved worlds and alien species?",bridge,"['The Hork-Bajir Chronicles', 'Animorphs']",Animorphs
+Are the Laleli Mosque and Esma Sultan Mansion located in the same neighborhood?,comparison,"['Laleli Mosque', 'Esma Sultan Mansion']",no
+"The director of the romantic comedy ""Big Stone Gap"" is based in what New York city?",bridge,"['Big Stone Gap (film)', 'Adriana Trigiani']","Greenwich Village, New York City"
+2014 S/S is the debut album of a South Korean boy group that was formed by who?,bridge,"['2014 S/S', 'Winner (band)']",YG Entertainment
+Who was known by his stage name Aladin and helped organizations improve their performance as a consultant?,bridge,"['Eenasul Fateh', 'Management consulting']",Eenasul Fateh
+The arena where the Lewiston Maineiacs played their home games can seat how many people?,bridge,"['Lewiston Maineiacs', 'Androscoggin Bank Colisée']","3,677 seated"
+"Who is older, Annie Morton or Terry Richardson?",bridge,"['Annie Morton', 'Terry Richardson']",Terry Richardson
+Are Local H and For Against both from the United States?,comparison,"['Local H', 'For Against']",yes
