@@ -1,0 +1,116 @@
+Given a textual paragraph, your task is to perform Named Entity Recognition (NER) and extract all entities from the text. Follow these requirements:
+
+### Labeling Nodes:
+- **Entity Types:** Use only the basic entity types: PERSON, ORGANIZATION, LOCATION, and DATE.
+- **Miscellaneous Entities:** If an entity does not fit any of the predefined categories, label it as MISC.
+- **Descriptive Properties:**
+  For each entity, include all relevant descriptive attributes **explicitly mentioned in the text**.
+
+  - The following examples illustrate the **minimum expected types of attributes**, but are **not exhaustive** (so include **any other explicitly stated properties**, beyond the examples):
+    - For **PERSON**: profession, nationality, titles, or government/company positions.
+    - For **LOCATION**: country, city, physical characteristics (e.g., size, capacity, type of place, region).
+    - For **ORGANIZATION**: alternative names, type, descriptive qualifiers.
+    - For **MISC**: any descriptors clarifying the entity.
+  -**Important remark:** Do not include relationships between entities within the property list! Focus solely on entity-specific properties.
+
+- **Stick to the text:** Do not infer, assume, or fabricate attributes. Only use what is explicitly present in the text.
+- **Avoid Duplicate References:** Ensure that you do not provide multiple names referencing the same entity.
+
+# Demonstration 1
+
+## Input
+Jack Parsons (born October 2, 1914, Los Angeles, California, U.S.—died June 17, 1952, Pasadena, California)
+was an American rocket scientist and chemist who made significant contributions to the development of rocket technology
+and missile systems and was a cofounder of the Jet Propulsion Laboratory (JPL) at the California Institute of Technology (Caltech)
+and of the Aerojet Engineering Corporation.
+
+## Output
+[
+  {
+    "entity_name": "Jack Parsons",
+    "entity_type": "PERSON",
+    "properties": [
+      "American",
+      "rocket scientist",
+      "chemist"
+    ]
+  },
+  {
+    "entity_name": "October 2, 1914",
+    "entity_type": "DATE",
+    "properties": []
+  },
+  {
+    "entity_name": "June 17, 1952",
+    "entity_type": "DATE",
+    "properties": []
+  },
+  {
+    "entity_name": "Los Angeles",
+    "entity_type": "LOCATION",
+    "properties": [
+      "City",
+      "State: California",
+      "Country: U.S."
+    ]
+  },
+  {
+    "entity_name": "Pasadena",
+    "entity_type": "LOCATION",
+    "properties": [
+      "City",
+      "State: California"
+    ]
+  },
+  {
+    "entity_name": "Jet Propulsion Laboratory",
+    "entity_type": "ORGANIZATION",
+    "properties": [
+      "Abbreviation: JPL"
+    ]
+  },
+  {
+    "entity_name": "California Institute of Technology",
+    "entity_type": "ORGANIZATION",
+    "properties": [
+      "Nickname: Caltech"
+    ]
+  },
+  {
+    "entity_name": "Aerojet Engineering Corporation",
+    "entity_type": "ORGANIZATION",
+    "properties": []
+  },
+  {
+    "entity_name": "rocket technology and missile systems",
+    "entity_type": "MISC",
+    "properties": []
+  }
+]
+
+## Demonstration 2
+
+The Belgrade Arena is a multi-purpose indoor arena located in Belgrade, Serbia. It is designed as a universal hall for sports, cultural events and other programs.
+The arena's capacity stands at 18,386. Also there is small hall with underground tuminel for warming while the total floor area stands at 48,000 m2.
+
+## Output
+
+[
+  {
+    "entity_name": "Belgrade Arena",
+    "entity_type": "LOCATION",
+    "properties": ["capacity of 18,386", "total floor area of 48,000 m2", "multi-purpose", "indoor arena", "universal hall for sports, cultural events and other programs"]
+  },
+  {
+    "entity_name": "Belgrade",
+    "entity_type": "LOCATION",
+    "properties": ["city", "Country: Serbia"]
+  },
+  {
+    "entity_name": "Serbia",
+    "entity_type": "LOCATION",
+    "properties": ["country"]
+  }
+]
+
+# Real Input

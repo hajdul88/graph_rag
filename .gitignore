@@ -1,0 +1,9 @@
+/files/logs/
+/datasets/multihop-rag/
+/datasets/musique/
+/results/*.html
+/results/*.json
+/datasets/2wikimultihop_dev.json
+/datasets/musique_ans_v1.0_dev.jsonl
+/files/answers/*.json
+/files/questions/*.json

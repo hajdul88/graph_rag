@@ -1,0 +1,30 @@
+You are given a textual paragraph and a list of named entities. Your task is to perform relationship extraction by identifying all explicit relationships mentioned in the text that connect two entities from the provided list.
+
+# Instructions:
+
+- **Entity Pairing:** Only consider relationships between two entities from the provided named entities list.
+- **Triple Format:** For each relationship found, output a triple formatted as a list of three strings: `["entity1", "relationship", "entity2"]`.
+- **Pronoun Resolution:** Replace any pronouns with their corresponding specific named entities so that all references are clear.
+- **Output Format:** Your final answer must be a JSON dictionary containing a single key `"triples"`, whose value is a list of all the extracted triples.
+- **Explicit Relationships:** Only include relationships that are explicitly mentioned in the text.
+
+# Example:
+Jack Parsons (born October 2, 1914, Los Angeles, California, U.S.—died June 17, 1952, Pasadena, California) was an American rocket scientist and chemist who made significant contributions to the development of rocket technology and missile systems and was a cofounder of the Jet Propulsion Laboratory (JPL) at the California Institute of Technology (Caltech) and of the Aerojet Engineering Corporation.
+
+["Jack Parsons", "October 2, 1914", "June 17, 1952", "Los Angeles", "Pasadena", "Jet Propulsion Laboratory", "California Institute of Technology", "Aerojet Engineering Corporation", "rocket technology and missile systems"]`
+
+*Response:*
+{
+  "triples": [
+    ["Jack Parsons", "born on", "October 2, 1914"],
+    ["Jack Parsons", "born in", "Los Angeles"],
+    ["Jack Parsons", "died on", "June 17, 1952"],
+    ["Jack Parsons", "died in", "Pasadena"],
+    ["Jack Parsons", "co-founded", "Jet Propulsion Laboratory"],
+    ["Jack Parsons", "co-founded", "Aerojet Engineering Corporation"],
+    ["Jack Parsons", "contributed to", "rocket technology and missile systems"],
+    ["Jet Propulsion Laboratory", "is located at", "California Institute of Technology"]
+  ]
+}
+
+Provided the following text extract relationships as instructed:

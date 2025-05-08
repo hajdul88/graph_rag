@@ -1,0 +1,116 @@
+Given a textual paragraph, your task is to identify and extract entities from the provided text following the detailed step-by-step procedure described below:
+
+- **Identify all entities explicitly mentioned in the text.**
+   - Entities fall into one of four categories:
+     - **PERSON**: Individual people.
+     - **ORGANIZATION**: Companies, institutions, and organized groups.
+     - **GPE** (Geopolitical Entities): Countries, cities, states, regions, or territories.
+     - **MISC**: All other notable entities that don't fit the above categories, such as historical events, artworks, patents, buildings, etc.
+
+- **Handle Names and Aliases:**
+   - If an entity has multiple mentions (aliases or abbreviations), use the **full official name** as the primary reference.
+   - Include all the mentioned aliases in output information
+
+- **Extract factual attributes:**
+   - For **PERSON** entities, extract:
+     - Birthplace, birth/death dates, nationality, occupation, titles, and achievements explicitly stated in the text.
+   - For **ORGANIZATION** entities, extract:
+     - Foundation dates, location of headquarters, industry or sectors, associated institutions, co-founders, and explicit criticisms if any.
+   - For **GPE** entities, extract:
+     - Extract explicitly stated geographical or political details, historical characteristics, capital city, demographics, and cultural or administrative aspects
+     - **By any means do not include** information like "birthplace of...", "city of origin of...", or "location where someone died" or any information that describe GPE in context dependent manner
+   - For **MISC** entities, extract:
+     - Explicitly stated temporal attributes, scale, historical significance, or explicit descriptive facts provided in the text.
+
+- **Strict adherence to text:**
+   - **Only** extract details explicitly mentioned in the text.
+   - **Do not** infer, assume, or fabricate information not present in the provided text.
+
+## Output Format
+
+- Return your response as a JSON array.
+- Each element in the array should be a JSON object with exactly four keys: `"name"`, `"type"`, `"aliases"`, and `"entity_information"`.
+
+# Demonstration
+
+## Input
+
+Nikola Tesla (born July 9/10, 1856, Smiljan, Austrian Empire [now in Croatia]—died January 7, 1943, New York, New York, U.S.) was a Serbian American inventor and engineer who discovered and patented the rotating magnetic field, the basis of most alternating-current machinery. He also developed the three-phase system of electric power transmission. He immigrated to the United States in 1884 and sold the patent rights to his system of alternating-current dynamos, transformers, and motors to George Westinghouse. In 1891 he invented the Tesla coil, an induction coil widely used in radio technology.
+
+## Desired output
+
+[
+  {
+    "name": "Nikola Tesla",
+    "type": "PERSON",
+    "aliases": [],
+    "entity_information": "Born July 9/10, 1856, in Smiljan, Austrian Empire (now in Croatia), died January 7, 1943, in New York, U.S. Serbian American inventor and engineer who discovered and patented the rotating magnetic field, developed the three-phase system of electric power transmission, immigrated to the United States in 1884, sold patent rights of alternating-current systems to George Westinghouse, and invented the Tesla coil in 1891."
+  },
+  {
+    "name": "Smiljan",
+    "type": "GPE",
+    "aliases": [],
+    "entity_information": "Place previously in Austrian Empire, currently part of Croatia."
+  },
+  {
+    "name": "Austrian Empire",
+    "type": "GPE",
+    "aliases": [],
+    "entity_information": "Empire existing in 1856."
+  },
+  {
+    "name": "Croatia",
+    "type": "GPE",
+    "aliases": [],
+    "entity_information": "Country in Europe."
+  },
+  {
+    "name": "New York",
+    "type": "GPE",
+    "aliases": [],
+    "entity_information": "City in the United States."
+  },
+  {
+    "name": "United States",
+    "type": "GPE",
+    "aliases": ["U.S."],
+    "entity_information": "Country."
+  },
+  {
+    "name": "George Westinghouse",
+    "type": "PERSON",
+    "aliases": [],
+    "entity_information": "Person who purchased patent rights of Nikola Tesla's system of alternating-current dynamos, transformers, and motors."
+  },
+  {
+    "name": "Tesla coil",
+    "type": "MISC",
+    "aliases": [],
+    "entity_information": "Induction coil invented by Nikola Tesla in 1891, widely used in radio technology."
+  }
+]
+
+## Forbidden outputs
+
+[
+  {
+    "name": "United States",
+    "type": "GPE",
+    "aliases": [],
+    "entity_information": "Country where Nikola Tesla immigrated to in 1884."
+  },
+  {
+    "name": "New York",
+    "type": "GPE",
+    "aliases": [],
+    "entity_information": "City in the United States, where Nikola Tesla died."
+  },
+  {
+    "name": "Smiljan",
+    "type": "GPE",
+    "aliases": [],
+    "entity_information": "Town in the Austrian Empire (now in Croatia), birthplace of Nikola Tesla."
+  }
+]
+
+# Real input

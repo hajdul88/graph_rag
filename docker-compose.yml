@@ -1,0 +1,44 @@
+  version: '3.8'
+
+  services:
+    neo4j:
+      image: neo4j:5.25.1
+      environment:
+        NEO4J_AUTH: "neo4j/test1234"
+        NEO4J_PLUGINS: '["graph-data-science", "apoc"]'
+        NEO4J_dbms_security_procedures_unrestricted: "gds.*,apoc.*"
+      ports:
+        - "7474:7474"  # Web interface
+        - "7687:7687"  # Bolt for app
+      volumes:
+        - neo4j_data:/data
+      healthcheck:
+        test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/7687"]
+        interval: 20s
+        timeout: 20s
+        retries: 5
+
+    app:
+      build:
+        context: .
+        dockerfile: Dockerfile
+      environment:
+        NEO4J_URL: "bolt://neo4j:7687"
+        NEO4J_USER: "neo4j"
+        NEO4J_PASSWORD: "test1234"
+        OLLAMA_URL: "https://graph-rag-research--ollama-ollama-serve.modal.run/v1"
+      depends_on:
+        neo4j:
+            condition: service_healthy
+      ports:
+        - "8000:8000"
+      volumes:
+        - ./src:/app/src
+        - ./tests:/app/tests
+        - ./files:/app/files
+        - ./datasets:/app/datasets
+        - ./results:/app/results
+
+  volumes:
+    neo4j_data:
+
