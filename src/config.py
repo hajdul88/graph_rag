@@ -2,13 +2,14 @@ import os
 from dataclasses import dataclass
 from typing import List
 
+
 @dataclass
 class EvaluationConfig:
     """Controls which pipeline stages to run and how many samples."""
     building_corpus_from_scratch: bool = False
     ingest_corpus: bool = False
-    number_of_samples_in_corpus: int = 5
-    benchmark: str = "MuSiQuE"  # 'HotPotQA', 'TwoWikiMultiHop', 'MuSiQuE'
+    number_of_samples_in_corpus: int = 100
+    benchmark: str = "TwoWikiMultiHop"  # 'HotPotQA', 'TwoWikiMultiHop', 'MuSiQuE'
     answering_questions: bool = True
     evaluating_answers: bool = True
     evaluation_engine: str = "DeepEval"
@@ -25,11 +26,13 @@ class EvaluationConfig:
                             "3hop1__274148_792411_51423", "3hop1__398232_326948_78782",
                             "4hop1__88342_75218_128008_67954",
                             "4hop3__312119_132409_371500_35031"]
+
     # subset of questions for knowledge subgraph visualization
 
     def __post_init__(self):
         if self.evaluation_metrics is None:
             self.evaluation_metrics = ["EM", "f1"]
+
 
 @dataclass
 class FilePathConfig:
@@ -40,8 +43,8 @@ class FilePathConfig:
     templates_folder: str = "/app/files/templates"
     graphs_folder: str = "/app/files/graphs"
 
-    questions_file_name: str = "musique_100"
-    corpus_file_name: str = "musique_corpus_100"
+    questions_file_name: str = "2wiki_100"
+    corpus_file_name: str = "2wiki_corpus_100"
     answers_file_name: str = "test_phi"
 
     @property
@@ -68,7 +71,7 @@ class FilePathConfig:
 @dataclass
 class DatabaseConfig:
     """Database connection configuration."""
-    NEO4J_URL = os.environ['NEO4J_URL']
+    NEO4J_URL = os.environ['NEO4J_NEW_URL']
     NEO4J_USER = os.environ['NEO4J_USER']
     NEO4J_PASSWORD = os.environ['NEO4J_PASSWORD']
 

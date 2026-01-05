@@ -1,37 +1,75 @@
+from typing import Type, Dict
+from .base import RAGAgent
+from .retrieval_config import AgentConfig, Neo4jConfig, EmbeddingConfig, RetrievalConfig, ReasoningConfig
 from .modified_diffusion_agent import DiffusionBFSAgent
 from .baseline_cot import BaselineAgentCoT
 from .hybrid_agent import HybridAgentCoT
 from .decomposition_agent import DecompositionAgent
 
+# Registry mapping agent types to their classes
+AGENT_REGISTRY: Dict[str, Type[RAGAgent]] = {
+    "baseline_cot": BaselineAgentCoT,
+    "modified_diffusion_agent": DiffusionBFSAgent,
+    "hybrid": HybridAgentCoT,
+    "decomposition_agent": DecompositionAgent,
+}
+
 
 class AgentFactory:
+    """Factory for creating RAG agents with configuration."""
+
     @staticmethod
-    def get_agent(neo4j_url: str, neo4j_username: str, neo4j_pw: str, agent_type: str, llm_model: str, ollama_url: str,
-                  reasoning: bool, reasoning_steps: int, reasoning_prompt_loc: str, answering_prompt_loc: str):
-        if agent_type == "baseline_cot":
-            return BaselineAgentCoT(neo4j_url=neo4j_url, neo4j_pw=neo4j_pw, neo4j_username=neo4j_username,
-                                    model_name=llm_model, ollama_url=ollama_url,
-                                    answering_prompt_loc=answering_prompt_loc,
-                                    reasoning_prompt_loc=reasoning_prompt_loc,
-                                    reasoning=reasoning,
-                                    max_reasoning_steps=reasoning_steps
-                                    )
-        elif agent_type == 'modified_diffusion_agent':
-            return DiffusionBFSAgent(neo4j_url=neo4j_url, neo4j_username=neo4j_username, neo4j_pw=neo4j_pw,
-                                     model_name=llm_model, ollama_url=ollama_url,
-                                     answering_prompt_loc=answering_prompt_loc,
-                                     reasoning_prompt_loc=reasoning_prompt_loc,
-                                     reasoning=reasoning,
-                                     max_reasoning_steps=reasoning_steps)
-        elif agent_type == 'hybrid':
-            return HybridAgentCoT(neo4j_url=neo4j_url, neo4j_pw=neo4j_pw, neo4j_username=neo4j_username,
-                                  model_name=llm_model, ollama_url=ollama_url,
-                                  answering_prompt_loc=answering_prompt_loc,
-                                  reasoning_prompt_loc=reasoning_prompt_loc)
-        elif agent_type == 'decomposition_agent':
-            return DecompositionAgent(neo4j_url=neo4j_url, neo4j_pw=neo4j_pw, neo4j_username=neo4j_username,
-                                      model_name=llm_model, ollama_url=ollama_url,
-                                      answering_prompt_loc=answering_prompt_loc,
-                                      reasoning_prompt_loc=reasoning_prompt_loc)
-        else:
-            raise ValueError(f"Unknown agent type: {agent_type}")
+    def get_agent(
+            agent_type: str,
+            model_name: str,
+            neo4j_url: str,
+            neo4j_username: str,
+            neo4j_pw: str,
+            ollama_url: str,
+            answering_prompt_loc: str,
+            reasoning_prompt_loc: str,
+            reasoning: bool = True,
+            reasoning_steps: int = 3,
+            **agent_specific_kwargs
+    ) -> RAGAgent:
+        """Create a RAG agent with the specified configuration. 
+
+        Args:
+            agent_type: Type of agent to create (must be in AGENT_REGISTRY).
+            model_name: Name of the LLM model. 
+            neo4j_url:  Neo4j database URL.
+            neo4j_username: Neo4j username.
+            neo4j_pw: Neo4j password.
+            ollama_url: Ollama API URL.
+            answering_prompt_loc: Path to answering prompt file.
+            reasoning_prompt_loc: Path to reasoning prompt file. 
+            reasoning: Enable reasoning steps.
+            reasoning_steps: Maximum reasoning iterations.
+            **agent_specific_kwargs: Additional agent-specific parameters.
+
+        Returns:
+            An instance of the requested agent type. 
+
+        Raises:
+            ValueError:  If agent_type is not registered. 
+        """
+        if agent_type not in AGENT_REGISTRY:
+            raise ValueError(
+                f"Unknown agent type: {agent_type}. "
+                f"Available types: {list(AGENT_REGISTRY.keys())}"
+            )
+
+        config = AgentConfig(
+            model_name=model_name,
+            neo4j=Neo4jConfig(url=neo4j_url, username=neo4j_username, password=neo4j_pw),
+            embedding=EmbeddingConfig(),
+            retrieval=RetrievalConfig(**{k: v for k, v in agent_specific_kwargs.items()
+                                         if k in RetrievalConfig.__dataclass_fields__}),
+            reasoning=ReasoningConfig(enabled=reasoning, max_steps=reasoning_steps),
+            ollama_url=ollama_url,
+            answering_prompt_loc=answering_prompt_loc,
+            reasoning_prompt_loc=reasoning_prompt_loc,
+        )
+
+        agent_class = AGENT_REGISTRY[agent_type]
+        return agent_class(config)
