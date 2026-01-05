@@ -7,6 +7,7 @@ import numpy as np
 from typing import List, Dict, Tuple
 import json
 from collections import deque
+import time
 
 reasoning_schema = {
     "type": "object",
@@ -46,8 +47,9 @@ class DiffusionBFSAgent(RAGAgent):
                  answering_prompt_loc: str = "",
                  reasoning_prompt_loc: str = "",
                  reasoning: bool = True,
-                 max_reasoning_steps: int = 3,
-                 k_hop: int = 3,
+                 max_reasoning_steps: int = 2,
+                 k_hop: int = 4,
+                 normalization_parameter: float = 0.4
                  ):
         """Initializes the DiffusionBFSAgent.
 
@@ -76,6 +78,7 @@ class DiffusionBFSAgent(RAGAgent):
         self.reasoning = reasoning
         self.max_reasoning_steps = max_reasoning_steps
         self.k_hop = k_hop
+        self.normalization_parameter = normalization_parameter
 
     def _retrieve_seed_entities(self, query_embedding: np.array, top_k: int) -> List[str]:
         """Retrieves the most relevant entities based on the query embedding.
@@ -184,7 +187,8 @@ class DiffusionBFSAgent(RAGAgent):
             results = s.run(query, query_embedding=query_embedding, top_k=activating_descriptions)
             return [record.data()['name'] for record in results]
 
-    def _retrieve_relevant_descriptions(self, entity_names: List[str], query_embedding: np.array):
+    def _retrieve_relevant_documents(self, entity_names: List[str], query_embedding: np.array,
+                                     pruning_threshold: float):
         """Retrieves relevant descriptions for the given entities.
 
         Args:
@@ -195,18 +199,17 @@ class DiffusionBFSAgent(RAGAgent):
             A list of formatted strings containing entity names and their descriptions.
         """
         query = """
-            MATCH (e:Entity)<-[:DESCRIBES]-(d:Description)
+            MATCH (e:Entity)<-[:DESCRIBES]-(d:Document)
             WHERE e.name IN $entity_names
-            WITH e, d, gds.similarity.cosine(d.embedding, $query_embedding) AS similarity
+            WITH DISTINCT d, gds.similarity.cosine(d.embedding, $query_embedding) AS similarity
+            WHERE similarity >= $threshold
+            RETURN d.text as text, similarity
             ORDER BY similarity DESC
-            RETURN e.name as e_name, d.text as text, similarity
         """
         with self.driver.session() as s:
-            results = s.run(query, entity_names=entity_names, query_embedding=query_embedding)
-            context = []
-            for r in results:
-                data = r.data()
-                context.append(data['e_name'] + ': ' + data['text'])
+            results = s.run(query, entity_names=entity_names, query_embedding=query_embedding,
+                            threshold=pruning_threshold)
+            context = [r.data()['text'] for r in results]
             return context
 
     def _create_adj_dict(self, arc_list: List[Dict], initially_activated: List[str]) -> Dict[str, List[Tuple]]:
@@ -223,14 +226,15 @@ class DiffusionBFSAgent(RAGAgent):
 
         adj_dict = dict()
         for j, a in enumerate(arc_list):
+            normalized_similarity = max(0, (a['similarity'] - self.normalization_parameter) / (1-self.normalization_parameter))
             if not a['head_entity_name'] in adj_dict:
                 adj_dict[a['head_entity_name']] = []
             if not a['tail_entity_name'] in adj_dict:
                 adj_dict[a['tail_entity_name']] = []
             adj_dict[a['head_entity_name']].append(
-                (a['tail_entity_name'], j, a['similarity']))
+                (a['tail_entity_name'], j, normalized_similarity))
             adj_dict[a['tail_entity_name']].append(
-                (a['head_entity_name'], j, a['similarity']))
+                (a['head_entity_name'], j, normalized_similarity))
         for n in initially_activated:
             if n not in adj_dict:
                 adj_dict[n] = []
@@ -264,12 +268,12 @@ class DiffusionBFSAgent(RAGAgent):
                 visited.add(node)
                 for arc in adj_dict[node]:
                     target, arc_index, prob = arc
-                    entity_score[target] += prob * entity_score[node]
+                    entity_score[target] = min(1, entity_score[target] + prob * entity_score[node])
                     if target not in visited:
                         queue.append(target)
         activated_entities = {k for k, v in entity_score.items() if v > activation_threshold}
         relevant_triplets = {a[1] for e, arcs in adj_dict.items() if e in activated_entities
-                             for a in arcs if a[0] in activated_entities and a[2] > pruning_threshold}
+                             for a in arcs if a[0] in activated_entities and a[2] >= pruning_threshold}
         return relevant_triplets, activated_entities
 
     def _knowledge_acquisition_step(self, query_embedding: np.array, retrieve_k: int, activating_descriptions: int,
@@ -294,12 +298,12 @@ class DiffusionBFSAgent(RAGAgent):
                                                                        initially_activated=activated_entities,
                                                                        activation_threshold=activation_threshold,
                                                                        pruning_threshold=pruning_threshold)
-        descriptions = self._retrieve_relevant_descriptions(list(relevant_entities), query_embedding)
+        documents = self._retrieve_relevant_documents(list(relevant_entities), query_embedding, pruning_threshold)
         triplets_context = [' '.join((retrieved_rels[i]['head_entity_name'], retrieved_rels[i]['relationship_name'],
                                       retrieved_rels[i]['tail_entity_name']))
                             for i in relevant_triplets]
-        context = ("### Context " + '\n' + '\n\n'.join(descriptions) +
-                   '\n' + '**Relationships**' + '\n' + '\n'.join(triplets_context))
+        context = ("### Context " + '\n' + '\n\n'.join(documents) +
+                   '\n' + '**Key relationships**' + '\n' + '\n'.join(triplets_context))
         return context
 
     def _generate_answer(self, query: str, context: str, retrieve_k: int, activating_descriptions: int,
@@ -325,10 +329,19 @@ class DiffusionBFSAgent(RAGAgent):
             for _ in range(self.max_reasoning_steps):
                 messages_reasoning = [{"role": "system", "content": self.reasoning_prompt},
                                       {"role": "user", "content": query}, {"role": "user", "content": context}]
-                reasoning_result = self.client.chat(model=self.model_name, messages=messages_reasoning, stream=False,
-                                                    keep_alive=0,
-                                                    format=reasoning_schema, options={"temperature": 0.1})
-                reasoning_response = json.loads(reasoning_result['message']['content'])
+                try:
+                    reasoning_result = self.client.chat(model=self.model_name, messages=messages_reasoning,
+                                                        stream=False,
+                                                        options={
+                                                            "temperature": 0.1
+                                                        },
+                                                        keep_alive=0,
+                                                        format=reasoning_schema,
+                                                        )
+                    reasoning_response = json.loads(reasoning_result['message']['content'])
+                except Exception as e:
+                    self.max_reasoning_steps += 1
+                    continue
                 if reasoning_response['answer_possible']:
                     break
                 summarized_context = reasoning_response['provided_context']
@@ -338,18 +351,24 @@ class DiffusionBFSAgent(RAGAgent):
                                                                activating_descriptions,
                                                                activation_threshold,
                                                                pruning_threshold)
-                context = new_context + f"\n**Additional facts**" + summarized_context
+                context = "# Known information\n" + summarized_context + "\n# Additional facts" + new_context[12:]
 
         messages = [{"role": "system", "content": self.answering_prompt}, {"role": "user", "content": context},
                     {"role": "user", "content": query}]
-        result = self.client.chat(model=self.model_name, messages=messages, stream=False, keep_alive=0,
-                                  format=ModelResponse.model_json_schema(), options={"temperature": 0.1})
+        while True:
+            try:
+                result = self.client.chat(model=self.model_name, messages=messages, stream=False, keep_alive=0,
+                                          format=ModelResponse.model_json_schema(), options={"temperature": 0.1})
+                break
+            except Exception as e:
+                print(e)
+                time.sleep(1)
         response = ModelResponse.validate(json.loads(result['message']['content']))
         return {'answer': response.final_answer, 'reasoning': response.reasoning, 'knowledge': context}
 
-    def generate_answer(self, query: str, retrieve_k: int = 10, activating_descriptions: int = 3,
-                        activation_threshold: float = 0.4,
-                        pruning_threshold: float = 0.3
+    def generate_answer(self, query: str, retrieve_k: int = 10, activating_descriptions: int = 10,
+                        activation_threshold: float = 0.5,
+                        pruning_threshold: float = 0.5
                         ) -> Dict[str, str]:
         """Generate an answer for the given query using graph‐based retrieval and diffusion.
 

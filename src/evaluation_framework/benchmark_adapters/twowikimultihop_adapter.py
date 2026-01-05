@@ -2,8 +2,10 @@ import requests
 import os
 import json
 import random
-from typing import Optional, Union, Any, LiteralString
+from typing import Optional, Union, Any, LiteralString, List
 from .base_benchmark_adapter import BaseBenchmarkAdapter
+from tools.embedding import EmbeddingPipeline
+import numpy as np
 
 
 class TwoWikiMultihopAdapter(BaseBenchmarkAdapter):
@@ -11,9 +13,39 @@ class TwoWikiMultihopAdapter(BaseBenchmarkAdapter):
         "filename": "/app/datasets/2wikimultihop_dev.json",
         "URL": "https://huggingface.co/datasets/voidful/2WikiMultihopQA/resolve/main/dev.json",
     }
+    encountered_docs = dict()
+    # TODO: change this into properly initialized parameter
+    embedding_pipeline = EmbeddingPipeline()
+
+    def _get_corpus_entries(self, item: dict[str, Any]) -> List[str]:
+        """Extracts corpus entries from the paragraphs of an item."""
+        corpus_list = []
+        for paragraph in item.get('context', []):
+            title = paragraph[0]
+            sentences = " ".join(paragraph[1])
+            if title not in self.encountered_docs:
+                corpus_list.append(sentences)
+                self.encountered_docs[title] = [
+                    self.embedding_pipeline.create_embedding(sentences)]
+            else:
+                similarity = 0
+                e1 = self.embedding_pipeline.create_embedding(sentences)
+                for e2 in self.encountered_docs[title]:
+                    dot_product = np.dot(e1, e2)
+                    norm_1 = np.linalg.norm(e1)
+                    norm_2 = np.linalg.norm(e2)
+
+                    cur_sim = dot_product / (norm_1 * norm_2)
+                    if cur_sim > similarity:
+                        similarity = cur_sim
+                if similarity < 0.99:
+                    corpus_list.append(sentences)
+                    self.encountered_docs[title].append(e1)
+
+        return corpus_list
 
     def load_corpus(
-        self, limit: Optional[int] = None, seed: int = 42
+            self, limit: Optional[int] = None, seed: int = 42
     ) -> tuple[list[Union[LiteralString, str]], list[dict[str, Any]]]:
         filename = self.dataset_info["filename"]
 
@@ -35,8 +67,7 @@ class TwoWikiMultihopAdapter(BaseBenchmarkAdapter):
         corpus_list = []
         question_answer_pairs = []
         for dict in corpus_json:
-            for title, sentences in dict["context"]:
-                corpus_list.append(" ".join(sentences))
+            corpus_list.extend(self._get_corpus_entries(dict))
 
             question_answer_pairs.append(
                 {

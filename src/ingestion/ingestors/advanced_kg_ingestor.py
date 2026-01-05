@@ -67,17 +67,35 @@ class AdvancedKGIngestor(BaseIngestor):
             """
         session.run(query, h_name=h_name, t_name=t_name, rel_name=rel_name, rel_embedding=rel_embedding)
 
+    def create_chunk_node(self, session, chunk, index):
+        query = """
+        MERGE (d:Document {doc_id:$doc_id ,text: $text, embedding: $embedding})
+        RETURN d
+        """
+        embedding = self.embed_pipeline.create_embedding(chunk)
+        session.run(query, doc_id=index, text=chunk, embedding=embedding)
+
+    def connect_chunk_entity(self, session, chunk_id, entity_name):
+        query = """
+        MATCH (e:Entity {name: $e_name}), (d:Document {doc_id:$doc_id})
+        MERGE (d)-[r:DESCRIBES]->(e)
+        RETURN r
+        """
+        session.run(query, e_name=entity_name, doc_id=chunk_id)
+
     def ingest(self, corpus_list: List[str]):
         with self.driver.session() as s:
             for i, chunk in chunk_documents(corpus_list, self.chunking_method, self.chunk_size, self.overlap_size):
                 entities, relationships, relation_embeddings = self.kg_pipeline.extract_entities_and_relationships(
                     chunk)
+                self.create_chunk_node(session=s, chunk=chunk, index=i)
                 for e in entities:
                     retrieved_name = self.create_entity_node(session=s, e_name=e['name'], e_type=e['type'],
                                                              e_aliases=e['aliases'])
                     self.create_entity_description(session=s, e_description=e['entity_information'],
                                                    e_embedding=e['embedding'], e_name=retrieved_name)
-                    for r, e in zip(relationships, relation_embeddings):
+                    for r, em in zip(relationships, relation_embeddings):
                         self.create_relationship_entity_entity(session=s, h_name=r[0], t_name=r[2], rel_name=r[1],
-                                                               rel_embedding=e)
+                                                               rel_embedding=em)
+                    self.connect_chunk_entity(session=s, chunk_id=i, entity_name=e['name'])
         self.driver.close()

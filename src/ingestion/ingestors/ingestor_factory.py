@@ -1,5 +1,4 @@
 from .basic_ingestor import BasicIngestor
-from .knowledge_graph_ingestor import KnowledgeGraphIngestor
 from .advanced_kg_ingestor import AdvancedKGIngestor
 
 
@@ -11,20 +10,21 @@ class IngestorFactory:
                      re_model: str = "hermes3",
                      re_template: str = "",
                      ner_template: str = "",
-                     ollama_url: str = ""):
+                     ollama_url: str = "",
+                     chunking_method: str = "word_based",
+                     chunk_size: int = 500,
+                     overlap_size: int = 100):
         if ingestor_type == 'basic':
-            return BasicIngestor(neo4j_url=neo4j_url, neo4j_user=neo4j_username, neo4j_password=neo4j_pw)
-        elif ingestor_type == 'knowledge_graph':
-            return KnowledgeGraphIngestor(neo4j_url=neo4j_url, neo4j_user=neo4j_username, neo4j_password=neo4j_pw,
-                                          template_ner_loc=ner_template, template_re_loc=re_template,
-                                          ner_model=ner_model,
-                                          re_model=re_model,
-                                          ollama_url=ollama_url)
+            return BasicIngestor(neo4j_url=neo4j_url, neo4j_user=neo4j_username, neo4j_password=neo4j_pw,
+                                 chunking_method=chunking_method, chunk_size=chunk_size, overlap_size=overlap_size)
         elif ingestor_type == "advanced_knowledge_graph":
             return AdvancedKGIngestor(neo4j_url=neo4j_url, neo4j_user=neo4j_username, neo4j_password=neo4j_pw,
                                       template_ner_loc=ner_template, template_re_loc=re_template,
                                       ner_model=ner_model,
                                       re_model=re_model,
-                                      ollama_url=ollama_url)
+                                      ollama_url=ollama_url,
+                                      chunking_method=chunking_method,
+                                      chunk_size=chunk_size,
+                                      overlap_size=overlap_size)
         else:
             raise ValueError(f"Unknown ingestor type: {ingestor_type}")

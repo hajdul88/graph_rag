@@ -2,7 +2,8 @@ import time
 import logging
 import asyncio
 import json
-import os
+
+from config import EvaluationConfig, FilePathConfig, DatabaseConfig, LLMConfig
 
 from evaluation_framework.corpus_builder.corpus_builder_executor import CorpusBuilderExecutor
 from evaluation_framework.answer_generation.answer_generation_executor import (
@@ -13,76 +14,54 @@ from tools.summarization import generate_metrics_dashboard
 from tools.neo4j_tools import Orchestrator
 from ingestion.ingestors.ingestor_factory import IngestorFactory
 from retrieval.agent_factory import AgentFactory
+from tools.context_recorder import GraphRetriever
 
-eval_params = {
-    # Corpus builder params
-    "building_corpus_from_scratch": False,
-    "number_of_samples_in_corpus": 100,
-    "benchmark": "TwoWikiMultiHop",  # 'HotPotQA' or 'TwoWikiMultiHop' or 'MuSiQuE'
-    # Question answering params
-    "answering_questions": True,
-    # Evaluation params
-    "evaluating_answers": True,
-    "evaluation_engine": "DeepEval",
-    "evaluation_metrics": ["EM", "f1"],
-    # Visualization
-    "dashboard": True,
-    # Clear database after experiment
-    "delete_at_end": False
-}
 
-# File system parameters
-QUESTIONS_FILE_NAME = "test_100"
-ANSWERS_FILE_NAME = "test_phi"
-
-questions_file = f"/app/files/questions/{QUESTIONS_FILE_NAME}_questions.json"
-answers_file = f"/app/files/answers/{ANSWERS_FILE_NAME}_answers.json"
-metrics_file = f"/app/results/{ANSWERS_FILE_NAME}_eval.json"
-dashboard_file = f"/app/results/{ANSWERS_FILE_NAME}_dashboard.html"
-
-# Database parameters
-NEO4J_URL = os.environ['NEO4J_URL']
-NEO4J_USER = os.environ['NEO4J_USER']
-NEO4J_PASSWORD = os.environ['NEO4J_PASSWORD']
-
-# RAG parameters
-OLLAMA_URL = os.environ['OLLAMA_URL']
-LLM_MODEL = 'phi4'
-INGESTION = 'advanced_knowledge_graph'
-AGENT = 'modified_diffusion_agent'
-templates_folder = '/app/files/templates'
-reasoning_flag = True
 
 
 async def main():
-    db_orchestrator = Orchestrator(NEO4J_URL, NEO4J_USER, NEO4J_PASSWORD)
-    ingestion = IngestorFactory.get_ingestor(ingestor_type=INGESTION,
-                                             neo4j_url=NEO4J_URL, neo4j_username=NEO4J_USER, neo4j_pw=NEO4J_PASSWORD,
-                                             ner_template=os.path.join(templates_folder, 'template_ner_v2.txt'),
-                                             re_template=os.path.join(templates_folder, 'template_re_v2.txt'),
-                                             re_model="llama3.3",
-                                             ner_model="llama3.3",
-                                             ollama_url=OLLAMA_URL)
+    evaluation_config = EvaluationConfig()
+    file_path_config = FilePathConfig()
+    database_config = DatabaseConfig()
+    llm_config = LLMConfig()
+    db_orchestrator = Orchestrator(database_config.NEO4J_URL, database_config.NEO4J_USER, database_config.NEO4J_PASSWORD)
+    ingestion = IngestorFactory.get_ingestor(ingestor_type=llm_config.ingestion_type,
+                                             neo4j_url=database_config.NEO4J_URL,
+                                             neo4j_username=database_config.NEO4J_USER,
+                                             neo4j_pw=database_config.NEO4J_PASSWORD,
+                                             ner_template=llm_config.NER_template,
+                                             re_template=llm_config.RE_template,
+                                             re_model=llm_config.model_name,
+                                             ner_model=llm_config.model_name,
+                                             ollama_url=llm_config.ollama_url,
+                                             chunking_method=llm_config.chunking,
+                                             chunk_size=llm_config.chunk_size_ingestion,
+                                             overlap_size=llm_config.overlap_size_ingestion)
 
-    rag_agent = AgentFactory.get_agent(agent_type=AGENT,
-                                       neo4j_url=NEO4J_URL, neo4j_username=NEO4J_USER, neo4j_pw=NEO4J_PASSWORD,
-                                       llm_model=LLM_MODEL,
-                                       ollama_url=OLLAMA_URL,
-                                       reasoning=reasoning_flag,
-                                       reasoning_prompt_loc=os.path.join(templates_folder, 'reasoning_prompt.txt'),
-                                       answering_prompt_loc=os.path.join(templates_folder, 'answering_prompt.txt'))
+    rag_agent = AgentFactory.get_agent(agent_type=llm_config.agent_type,
+                                       neo4j_url=database_config.NEO4J_URL, neo4j_username=database_config.NEO4J_USER,
+                                       neo4j_pw=database_config.NEO4J_PASSWORD,
+                                       llm_model=llm_config.model_name,
+                                       ollama_url=llm_config.ollama_url,
+                                       reasoning=llm_config.reasoning_enabled,
+                                       reasoning_steps=llm_config.reasoning_steps,
+                                       reasoning_prompt_loc=llm_config.reasoning_prompt_loc,
+                                       answering_prompt_loc=llm_config.answering_prompt_loc)
+
     ################################ Step 1: Corpus builder module
-    if eval_params["building_corpus_from_scratch"]:
+    if evaluation_config.building_corpus_from_scratch:
         logging.info("Corpus Builder started...")
         # Record start time
         start_time = time.time()
         # Build corpus
         corpus_builder = CorpusBuilderExecutor(ingestion_pipeline=ingestion)
-        questions = await corpus_builder.build_corpus(
-            limit=eval_params["number_of_samples_in_corpus"], benchmark=eval_params["benchmark"]
+        questions, corpus = await corpus_builder.build_corpus(
+            limit=evaluation_config.number_of_samples_in_corpus, benchmark=evaluation_config.benchmark,
+            ingest=evaluation_config.ingest_corpus
         )
-
-        with open(questions_file, "w", encoding="utf-8") as f:
+        with open(file_path_config.corpus_file, "w", encoding="utf-8") as f:
+            json.dump(corpus, f, ensure_ascii=False, indent=4)
+        with open(file_path_config.questions_file, "w", encoding="utf-8") as f:
             json.dump(questions, f, ensure_ascii=False, indent=4)
 
         logging.info("Corpus Builder End...")
@@ -93,26 +72,27 @@ async def main():
         # Log the elapsed time
         print("Ingestion execution time:", formatted_time)
         db_orchestrator.create_index()
+        print("INGESTION FINISHED")
     ################################ Step 2: Question answering module
-    if eval_params["answering_questions"]:
+    if evaluation_config.answering_questions:
         logging.info("Question answering started...")
         # Record start time
         start_time = time.time()
         try:
-            with open(questions_file, "r", encoding="utf-8") as f:
+            with open(file_path_config.questions_file, "r", encoding="utf-8") as f:
                 questions = json.load(f)
         except FileNotFoundError:
-            raise FileNotFoundError(f"Could not find the file: {questions_file}")
+            raise FileNotFoundError(f"Could not find the file: {file_path_config.questions_file}")
         except json.JSONDecodeError as e:
-            raise ValueError(f"Error decoding JSON from {questions_file}: {e}")
+            raise ValueError(f"Error decoding JSON from {file_path_config.questions_file}: {e}")
 
-        questions = questions[:eval_params["number_of_samples_in_corpus"]]
-        print(f"Loaded {len(questions)} questions from {questions_file}")
+        questions = questions[:evaluation_config.number_of_samples_in_corpus]
+        print(f"Loaded {len(questions)} questions from {file_path_config.questions_file}")
 
         answer_generator = AnswerGeneratorExecutor(rag_agent)
         answers = await answer_generator.question_answering_non_parallel(questions=questions)
 
-        with open(answers_file, "w", encoding="utf-8") as f:
+        with open(file_path_config.answers_file, "w", encoding="utf-8") as f:
             json.dump(answers, f, ensure_ascii=False, indent=4)
 
         logging.info("Question answering end...")
@@ -124,37 +104,66 @@ async def main():
         print("QA execution time:", formatted_time)
 
     ################################ Step 3: Evaluation module
-    if eval_params["evaluating_answers"]:
+    if evaluation_config.evaluating_answers:
         logging.info("Evaluation started...")
         try:
-            with open(answers_file, "r", encoding="utf-8") as f:
+            with open(file_path_config.answers_file, "r", encoding="utf-8") as f:
                 answers = json.load(f)
         except FileNotFoundError:
-            raise FileNotFoundError(f"Could not find the file: {answers_file}")
+            raise FileNotFoundError(f"Could not find the file: {file_path_config.answers_file}")
         except json.JSONDecodeError as e:
-            raise ValueError(f"Error decoding JSON from {answers_file}: {e}")
+            raise ValueError(f"Error decoding JSON from {file_path_config.answers_file}: {e}")
 
-        print(f"Loaded {len(answers)} questions from {answers_file}")
+        print(f"Loaded {len(answers)} questions from {file_path_config.answers_file}")
 
         evaluator = EvaluationExecutor()
         metrics = await evaluator.execute(
             answers=answers,
-            evaluator_engine=eval_params["evaluation_engine"],
-            evaluator_metrics=eval_params["evaluation_metrics"],
+            evaluator_engine=evaluation_config.evaluation_engine,
+            evaluator_metrics=evaluation_config.evaluation_metrics,
         )
 
-        with open(metrics_file, "w", encoding="utf-8") as f:
+        with open(file_path_config.metrics_file, "w", encoding="utf-8") as f:
             json.dump(metrics, f, ensure_ascii=False, indent=4)
 
         logging.info("Question answering end...")
 
-    if eval_params["dashboard"]:
+    if evaluation_config.dashboard:
         generate_metrics_dashboard(
-            json_data=metrics_file, output_file=dashboard_file,
-            benchmark=eval_params["benchmark"]
+            json_data=file_path_config.metrics_file, output_file=file_path_config.dashboard_file,
+            benchmark=evaluation_config.benchmark
         )
 
-    if eval_params['delete_at_end']:
+    ################################### RECORD CONTEXT GRAPHS
+    if evaluation_config.record_context_graphs:
+        graph_retriever = GraphRetriever(
+            neo4j_url=database_config.NEO4J_URL,
+            neo4j_username=database_config.NEO4J_USER,
+            neo4j_pw=database_config.NEO4J_PASSWORD,
+            graphs_folder=file_path_config.graphs_folder,
+            normalization_parameter=0.4
+        )
+        try:
+            with open(file_path_config.questions_file, "r", encoding="utf-8") as f:
+                questions = json.load(f)
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Could not find the file: {file_path_config.questions_file}")
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Error decoding JSON from {file_path_config.questions_file}: {e}")
+
+        questions = questions[:evaluation_config.number_of_samples_in_corpus]
+        for q in questions:
+            if q['id'] not in evaluation_config.questions_subset_vis:
+                continue
+            golden_entities = [e.strip() for e in q['entities'].split(" | ")]
+            graph_retriever.create_and_save_graphs(query_id=q['id'],
+                                                   query=q['question'],
+                                                   golden_entity_names=golden_entities,
+                                                   activation_threshold=0.5,
+                                                   pruning_threshold=0.45)
+
+    ################################### DELETE
+    if evaluation_config.delete_at_end:
         db_orchestrator.clear_db()
 
 

@@ -1,8 +1,10 @@
 import os
 import json
 import random
-from typing import Optional, Any, List, Union, Tuple
+from typing import Optional, Any, List, Tuple
 from .base_benchmark_adapter import BaseBenchmarkAdapter
+from tools.embedding import EmbeddingPipeline
+import numpy as np
 
 
 class MusiqueQAAdapter(BaseBenchmarkAdapter):
@@ -12,8 +14,12 @@ class MusiqueQAAdapter(BaseBenchmarkAdapter):
         "filename": "/app/datasets/musique_ans_v1.0_dev.jsonl",
         "download_url": "https://drive.google.com/file/d/1tGdADlNjWFaHLeZZGShh2IRcpO6Lv24h/view?usp=sharing"
     }
+    encountered_docs = dict()
+    # TODO: change this into properly initialized parameter
+    embedding_pipeline = EmbeddingPipeline()
 
     def _get_golden_context(self, item: dict[str, Any]) -> str:
+        # TODO: change this to also include columns for golden entities
         """Extracts golden context from question decomposition and supporting paragraphs."""
         golden_context = []
         paragraphs = item.get("paragraphs", [])
@@ -47,7 +53,28 @@ class MusiqueQAAdapter(BaseBenchmarkAdapter):
 
     def _get_corpus_entries(self, item: dict[str, Any]) -> List[str]:
         """Extracts corpus entries from the paragraphs of an item."""
-        return [paragraph["paragraph_text"] for paragraph in item.get("paragraphs", [])]
+        corpus_list = []
+        for paragraph in item.get("paragraphs", []):
+            if not paragraph['title'] in self.encountered_docs:
+                corpus_list.append(paragraph["paragraph_text"])
+                self.encountered_docs[paragraph['title']] = [
+                    self.embedding_pipeline.create_embedding(paragraph["paragraph_text"])]
+            else:
+                similarity = 0
+                e1 = self.embedding_pipeline.create_embedding(paragraph["paragraph_text"])
+                for e2 in self.encountered_docs[paragraph['title']]:
+                    dot_product = np.dot(e1, e2)
+                    norm_1 = np.linalg.norm(e1)
+                    norm_2 = np.linalg.norm(e2)
+
+                    cur_sim = dot_product / (norm_1 * norm_2)
+                    if cur_sim > similarity:
+                        similarity = cur_sim
+                if similarity < 0.999:
+                    corpus_list.append(paragraph["paragraph_text"])
+                    self.encountered_docs[paragraph['title']].append(e1)
+
+        return corpus_list
 
     def _get_question_answer_pair(
             self,

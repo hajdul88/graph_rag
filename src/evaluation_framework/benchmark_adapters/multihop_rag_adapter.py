@@ -7,8 +7,8 @@ class MultiHopRagAdapter(BaseBenchmarkAdapter):
     # TODO: make it download the data
     dataset_info = {
         "filename": "blablalalbal",
-        "url_corpus": "/home/jovan/PycharmProjects/rag_project/datasets/multihop-rag/corpus.json",
-        "url_qa": "/home/jovan/PycharmProjects/rag_project/datasets/multihop-rag/MultiHopRAG.json"
+        "url_corpus": "/app/datasets/multihop-rag/corpus.json",
+        "url_qa": "/app/datasets/multihop-rag/MultiHopRAG.json"
     }
 
     def load_corpus(
@@ -19,6 +19,7 @@ class MultiHopRagAdapter(BaseBenchmarkAdapter):
         if filename is not None:
             corpus_df = pd.read_json(self.dataset_info['url_corpus'])
             qa_df = pd.read_json(self.dataset_info['url_qa'])
+            qa_df['duplicate_count'] = qa_df.groupby(['answer']).cumcount()
             qa_df = qa_df[qa_df['duplicate_count'] < 4].reset_index().drop(columns='duplicate_count')
         else:
             print("Downloading data......")

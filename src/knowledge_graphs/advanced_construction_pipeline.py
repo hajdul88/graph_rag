@@ -67,7 +67,7 @@ class AdvancedKGConstructor:
             re_model: The language model identifier to be used for RE.
                 Defaults to "hermes3".
         """
-        self.client = Client(host=ollama_url, timeout=10*60)
+        self.client = Client(host=ollama_url, timeout=10 * 60)
         self.embedding_pipeline = embedding_pipeline
         with open(template_ner_loc, 'r') as file:
             self.template_ner = file.read()
@@ -89,14 +89,14 @@ class AdvancedKGConstructor:
             A list of dictionaries representing the extracted entities with their properties.
         """
         messages = [{"role": "system", "content": self.template_ner}, {"role": "user", "content": text}]
-        try:
-            result = self.client.chat(model=self.ner_model, messages=messages, stream=False, keep_alive=0,
-                                      format=struct_out_ner)
-        except Exception as e:
-            print(e)
-            time.sleep(20)
-            result = self.client.chat(model=self.ner_model, messages=messages, stream=False, keep_alive=0,
-                                      format=struct_out_ner)
+        while True:
+            try:
+                result = self.client.chat(model=self.ner_model, messages=messages, stream=False, keep_alive=0,
+                                          format=struct_out_ner)
+                break
+            except Exception as e:
+                print(e)
+                time.sleep(20)
 
         return json.loads(result['message']['content'])
 
@@ -112,7 +112,8 @@ class AdvancedKGConstructor:
         Returns:
             The list of entities with added embedding information.
         """
-        embeddings = [self.embedding_pipeline.create_embedding(e['name'] + ": " + e['entity_information']) for e in entities]
+        embeddings = [self.embedding_pipeline.create_embedding(e['name'] + ": " + e['entity_information']) for e in
+                      entities]
         for i, em in enumerate(embeddings):
             entities[i]['embedding'] = em
         return entities
@@ -152,14 +153,14 @@ class AdvancedKGConstructor:
         """
         new_text = text + '\nnamed_entities: ' + ner_list
         messages = [{"role": "system", "content": self.template_re}, {"role": "user", "content": new_text}]
-        try:
-            result = self.client.chat(model=self.re_model, messages=messages, stream=False, keep_alive=0,
-                                      format=struct_out_re)
-        except Exception as e:
-            print(e)
-            time.sleep(20)
-            result = self.client.chat(model=self.re_model, messages=messages, stream=False, keep_alive=0,
-                                      format=struct_out_re)
+        while True:
+            try:
+                result = self.client.chat(model=self.re_model, messages=messages, stream=False, keep_alive=0,
+                                          format=struct_out_re)
+                break
+            except Exception as e:
+                print(e)
+                time.sleep(20)
         response = result['message']['content']
         kg = json.loads(response)
         relations = [t for t in kg['triples'] if len(t) == 3]
