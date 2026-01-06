@@ -14,7 +14,7 @@ class DeepEvalAdapter(BaseEvalAdapter):
             "f1": F1ScoreMetric()
         }
 
-    async def evaluate_answers(
+    def evaluate_answers(
         self, answers: List[Dict[str, Any]], evaluator_metrics: List[str]
     ) -> List[Dict[str, Any]]:
         for metric in evaluator_metrics:

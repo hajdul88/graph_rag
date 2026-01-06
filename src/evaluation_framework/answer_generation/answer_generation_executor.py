@@ -6,7 +6,7 @@ class AnswerGeneratorExecutor:
     def __init__(self, rag_agent: RAGAgent):
         self.rag_pipeline = rag_agent
 
-    async def question_answering_non_parallel(
+    def question_answering_non_parallel(
             self, questions: list[dict[str, Any]]
     ):
         if not questions:

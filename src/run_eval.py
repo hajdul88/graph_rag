@@ -1,6 +1,5 @@
 import time
 import logging
-import asyncio
 import json
 from typing import Dict, Any
 
@@ -202,7 +201,7 @@ def create_graph_retriever(
 # Pipeline Stage Functions
 # ============================================================================
 
-async def run_corpus_building_stage(
+def run_corpus_building_stage(
         config_eval: EvaluationConfig,
         config_file: FilePathConfig,
         config_llm: LLMConfig,
@@ -228,7 +227,7 @@ async def run_corpus_building_stage(
     # Build corpus from benchmark
     corpus_builder = CorpusBuilderExecutor(ingestion_pipeline=ingestion_pipeline,
                                            embedding_model=config_llm.embedding_model_name)
-    questions, corpus = await corpus_builder.build_corpus(
+    questions, corpus = corpus_builder.build_corpus(
         limit=config_eval.number_of_samples_in_corpus,
         benchmark=config_eval.benchmark,
         ingest=config_eval.ingest_corpus
@@ -247,7 +246,7 @@ async def run_corpus_building_stage(
     logging.info("INGESTION FINISHED")
 
 
-async def run_question_answering_stage(
+def run_question_answering_stage(
         config_eval: EvaluationConfig,
         config_file: FilePathConfig,
         rag_agent
@@ -273,7 +272,7 @@ async def run_question_answering_stage(
 
     # Generate answers
     answer_generator = AnswerGeneratorExecutor(rag_agent)
-    answers = await answer_generator.question_answering_non_parallel(questions=questions)
+    answers = answer_generator.question_answering_non_parallel(questions=questions)
 
     # Save answers to file
     save_json_file(config_file.answers_file, answers)
@@ -283,7 +282,7 @@ async def run_question_answering_stage(
     log_execution_time("QA", start_time, end_time)
 
 
-async def run_evaluation_stage(
+def run_evaluation_stage(
         config_eval: EvaluationConfig,
         config_file: FilePathConfig
 ) -> None:
@@ -305,7 +304,7 @@ async def run_evaluation_stage(
 
     # Evaluate answers
     evaluator = EvaluationExecutor()
-    metrics = await evaluator.execute(
+    metrics = evaluator.execute(
         answers=answers,
         evaluator_engine=config_eval.evaluation_engine,
         evaluator_metrics=config_eval.evaluation_metrics,
@@ -335,7 +334,7 @@ def run_dashboard_generation(
     )
 
 
-async def run_graph_recording_stage(
+def run_graph_recording_stage(
         config_eval: EvaluationConfig,
         config_file: FilePathConfig,
         config_db: DatabaseConfig,
@@ -398,7 +397,7 @@ def run_cleanup_stage(
 # Main Orchestration
 # ============================================================================
 
-async def main():
+def main():
     """
     Main orchestration function for the evaluation pipeline.
 
@@ -423,30 +422,28 @@ async def main():
 
     # Execute pipeline stages in order
     if config_eval.building_corpus_from_scratch:
-        await run_corpus_building_stage(
+        run_corpus_building_stage(
             config_eval, config_file, config_llm, ingestion, db_orchestrator
         )
 
     if config_eval.answering_questions:
-        await run_question_answering_stage(config_eval, config_file, rag_agent)
+        run_question_answering_stage(config_eval, config_file, rag_agent)
 
     if config_eval.evaluating_answers:
-        await run_evaluation_stage(config_eval, config_file)
+        run_evaluation_stage(config_eval, config_file)
 
     if config_eval.dashboard:
         run_dashboard_generation(config_eval, config_file)
 
     if config_eval.record_context_graphs:
-        await run_graph_recording_stage(config_eval, config_file, config_db, config_llm)
+        run_graph_recording_stage(config_eval, config_file, config_db, config_llm)
 
     if config_eval.delete_at_end:
         run_cleanup_stage(config_eval, db_orchestrator)
 
 
 if __name__ == "__main__":
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
     try:
-        loop.run_until_complete(main())
+        main()
     finally:
         logging.info("Done")

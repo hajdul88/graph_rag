@@ -19,16 +19,16 @@ class CorpusBuilderExecutor:
         self.ingestion_pipeline = ingestion_pipeline
         self.embedding_model = embedding_model
 
-    async def build_corpus(self, limit: Optional[int] = None, benchmark="TwoWikiMultiHop", ingest: bool = False, ):
+    def build_corpus(self, limit: Optional[int] = None, benchmark="TwoWikiMultiHop", ingest: bool = False, ):
         if benchmark not in self.benchmark_adapter_options:
             raise ValueError(f"Unsupported benchmark: {benchmark}")
 
         self.adapter = self.benchmark_adapter_options[benchmark](embedding_model=self.embedding_model)
         self.raw_corpus, self.questions = self.adapter.load_corpus(limit=limit)
         if ingest:
-            await self._ingest(self.raw_corpus)
+            self._ingest(self.raw_corpus)
 
         return self.questions, self.raw_corpus
 
-    async def _ingest(self, doc_corpus):
+    def _ingest(self, doc_corpus):
         self.ingestion_pipeline.ingest(doc_corpus)

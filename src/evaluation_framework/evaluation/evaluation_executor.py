@@ -7,7 +7,7 @@ class EvaluationExecutor:
 
     eval_adapter = None
 
-    async def execute(
+    def execute(
         self, answers: List[Dict[str, Any]], evaluator_engine=None, evaluator_metrics=None
     ):
         if evaluator_engine not in self.evaluator_options:
@@ -15,6 +15,6 @@ class EvaluationExecutor:
 
         self.eval_adapter = self.evaluator_options[evaluator_engine]()
 
-        metrics = await self.eval_adapter.evaluate_answers(answers, evaluator_metrics)
+        metrics = self.eval_adapter.evaluate_answers(answers, evaluator_metrics)
 
         return metrics
