@@ -6,8 +6,8 @@ from typing import List
 @dataclass
 class EvaluationConfig:
     """Controls which pipeline stages to run and how many samples."""
-    building_corpus_from_scratch: bool = False
-    ingest_corpus: bool = False
+    building_corpus_from_scratch: bool = True
+    ingest_corpus: bool = True
     number_of_samples_in_corpus: int = 1
     benchmark: str = "MuSiQuE"  # 'HotPotQA', 'TwoWikiMultiHop', 'MuSiQuE'
     answering_questions: bool = True
@@ -15,8 +15,8 @@ class EvaluationConfig:
     evaluation_engine: str = "DeepEval"
     evaluation_metrics: List[str] = None
     dashboard: bool = True
-    delete_at_end: bool = True
-    record_context_graphs: bool = False
+    delete_at_end: bool = False
+    record_context_graphs: bool = True
     # knowledge subgraph visualization option
     questions_subset_vis = ["2hop__67660_81007"]
 
