@@ -21,16 +21,6 @@ from tools.context_recorder import GraphRetriever
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # ============================================================================
-# Constants
-# ============================================================================
-
-# Graph retrieval configuration thresholds
-DEFAULT_ACTIVATION_THRESHOLD = 0.5
-DEFAULT_PRUNING_THRESHOLD = 0.3
-DEFAULT_NORMALIZATION_PARAMETER = 0.3
-
-
-# ============================================================================
 # Utility Functions - File I/O
 # ============================================================================
 
@@ -172,13 +162,21 @@ def create_rag_agent(config_db: DatabaseConfig, config_llm: LLMConfig):
         reasoning_steps=config_llm.reasoning_steps,
         reasoning_prompt_loc=config_llm.reasoning_prompt_loc,
         answering_prompt_loc=config_llm.answering_prompt_loc,
-        embedding_model_name=config_llm.embedding_model_name
+        embedding_model_name=config_llm.embedding_model_name,
+        k_hop=config_llm.K_HOP,
+        retrieve_k=config_llm.RETRIEVE_K,
+        activating_descriptions=config_llm.ACTIVATING_DESCRIPTIONS,
+        activation_threshold=config_llm.ACTIVATION_THRESHOLD,
+        pruning_threshold=config_llm.PRUNING_THRESHOLD,
+        normalization_parameter=config_llm.NORMALIZATION_PARAMETER
+
     )
 
 
 def create_graph_retriever(
         config_db: DatabaseConfig,
-        config_file: FilePathConfig
+        config_file: FilePathConfig,
+        config_llm: LLMConfig
 ) -> GraphRetriever:
     """
     Initialize graph retriever with standard configuration.
@@ -186,6 +184,7 @@ def create_graph_retriever(
     Args:
         config_db: Database configuration
         config_file: File paths configuration
+        config_llm: RAG parameters configuration
 
     Returns:
         Initialized GraphRetriever instance
@@ -195,7 +194,7 @@ def create_graph_retriever(
         neo4j_username=config_db.NEO4J_USER,
         neo4j_pw=config_db.NEO4J_PASSWORD,
         graphs_folder=config_file.graphs_folder,
-        normalization_parameter=DEFAULT_NORMALIZATION_PARAMETER
+        normalization_parameter=config_llm.NORMALIZATION_PARAMETER
     )
 
 
@@ -339,7 +338,8 @@ def run_dashboard_generation(
 async def run_graph_recording_stage(
         config_eval: EvaluationConfig,
         config_file: FilePathConfig,
-        config_db: DatabaseConfig
+        config_db: DatabaseConfig,
+        config_llm: LLMConfig
 ) -> None:
     """
     Execute graph recording pipeline stage.
@@ -351,8 +351,9 @@ async def run_graph_recording_stage(
         config_eval:  Evaluation configuration controlling this stage
         config_file: File paths configuration
         config_db: Database configuration for graph retriever
+        config_llm: RAG configuration for graph retriever
     """
-    graph_retriever = create_graph_retriever(config_db, config_file)
+    graph_retriever = create_graph_retriever(config_db, config_file, config_llm)
 
     # Load questions from file
     questions = load_json_file(config_file.questions_file)
@@ -374,8 +375,8 @@ async def run_graph_recording_stage(
             query_id=question_id,
             query=question['question'],
             golden_entity_names=golden_entities,
-            activation_threshold=DEFAULT_ACTIVATION_THRESHOLD,
-            pruning_threshold=DEFAULT_PRUNING_THRESHOLD
+            activation_threshold=config_llm.ACTIVATION_THRESHOLD,
+            pruning_threshold=config_llm.PRUNING_THRESHOLD
         )
 
 
@@ -436,7 +437,7 @@ async def main():
         run_dashboard_generation(config_eval, config_file)
 
     if config_eval.record_context_graphs:
-        await run_graph_recording_stage(config_eval, config_file, config_db)
+        await run_graph_recording_stage(config_eval, config_file, config_db, config_llm)
 
     if config_eval.delete_at_end:
         run_cleanup_stage(config_eval, db_orchestrator)

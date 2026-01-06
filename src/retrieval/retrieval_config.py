@@ -23,6 +23,7 @@ class RetrievalConfig:
     activating_descriptions: int = 10
     activation_threshold: float = 0.5
     pruning_threshold: float = 0.5
+    normalization_parameter: float = 0.4
 
 
 @dataclass

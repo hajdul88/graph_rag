@@ -67,7 +67,7 @@ class HybridAgentCoT(RAGAgent, GraphRetrievalMixin):
 
         # Graph parameters
         self.k_hop = config.retrieval.k_hop
-        self.normalization_parameter = 0.4
+        self.normalization_parameter = config.retrieval.normalization_parameter
 
     def _decompose_question(self, query: str) -> List[str]:
         """Decompose a complex question into subquestions. 

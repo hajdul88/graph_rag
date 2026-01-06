@@ -55,7 +55,7 @@ class DiffusionBFSAgent(RAGAgent, GraphRetrievalMixin):
 
         # Graph retrieval parameters
         self.k_hop = config.retrieval.k_hop
-        self.normalization_parameter = 0.4  # Consider making this configurable
+        self.normalization_parameter = config.retrieval.normalization_parameter
 
     def _generate_answer(self, query: str, context: str) -> Dict[str, str]:
         """Generate an answer using the LLM, optionally with reasoning loops. 

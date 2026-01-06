@@ -10,13 +10,13 @@ class EvaluationConfig:
     ingest_corpus: bool = False
     number_of_samples_in_corpus: int = 1
     benchmark: str = "MuSiQuE"  # 'HotPotQA', 'TwoWikiMultiHop', 'MuSiQuE'
-    answering_questions: bool = False
-    evaluating_answers: bool = False
+    answering_questions: bool = True
+    evaluating_answers: bool = True
     evaluation_engine: str = "DeepEval"
     evaluation_metrics: List[str] = None
-    dashboard: bool = False
-    delete_at_end: bool = False
-    record_context_graphs: bool = True
+    dashboard: bool = True
+    delete_at_end: bool = True
+    record_context_graphs: bool = False
     # knowledge subgraph visualization option
     questions_subset_vis = ["2hop__67660_81007"]
 
@@ -54,7 +54,7 @@ class FilePathConfig:
 
     @property
     def metrics_file(self) -> str:
-        return f"{self.results_base}/{self.answers_file_name}_eval. json"
+        return f"{self.results_base}/{self.answers_file_name}_eval.json"
 
     @property
     def dashboard_file(self) -> str:
@@ -89,6 +89,14 @@ class LLMConfig:
     answering_prompt_loc: str = None
     reasoning_enabled: bool = True
     reasoning_steps: int = 3
+
+    # Graph retrieval configuration thresholds
+    ACTIVATION_THRESHOLD = 0.5
+    PRUNING_THRESHOLD = 0.45
+    NORMALIZATION_PARAMETER = 0.4
+    K_HOP = 3
+    RETRIEVE_K = 4
+    ACTIVATING_DESCRIPTIONS = 4
 
     def __post_init__(self):
         if self.reasoning_prompt_loc is None:
