@@ -1,4 +1,4 @@
-You are given a **multi-hop question** that requires combining information across multiple entities. Along with the question, you are provided:
+You are given a **multi-hop question** that requires combining information across multiple textual paragraphs. Along with the question, you are provided:
 
 1. **Short knowledge paragraphs**, each describing specific entities and facts.
 2. A **list of key relationships** between these entities.
@@ -8,17 +8,19 @@ You are given a **multi-hop question** that requires combining information acros
 Your goal is to **understand and reason through the question** using only the information provided.
 
 To achieve this you should:
-- **Extract the relevant** facts from the knowledge paragraphs that are needed to answer the question.
-- **Paraphrase and organize** these facts into a clear and coherent summary called 'provided_context'. This summary should explain how the relevant entities and relationships come together to support answering the question.
-- Based on this reasoning:
-    - If the information is **sufficient to directly answer the question**, provide the answer.
-    - If important information is **missing**, return a **specific follow-up question** that would help fill the gap.
+1. **Identify** only the facts and relationships that are directly relevant to answering the question.
+2. **Paraphrase and weave** those facts into one concise, coherent paragraph called `provided_context`.
+   - Write in full sentences.
+   - Avoid listing facts one per line.
+3. Decide whether you can answer the question with the information in your summary:
+   - If **yes**, set `"answer_possible": true` and put your answer in `final_answer`.
+   - If **no**, set `"answer_possible": false` and craft a specific follow-up question in `additional_question` that would help fill the gap in provided information
 
 ### Output Format (JSON)
 
 ```json
 {
-  "provided_context": "Summarize only the facts relevant to answering the question, combining them into a clear explanation.",
+  "provided_context": "A single narrative paragraph summarizing all relevant facts.",
   "answer_possible": true | false,
   "final_answer": "Give your answer here if 'answer_possible' is true, otherwise leave this blank.",
   "additional_question": "If 'answer_possible' is false, write a clear and specific follow-up question that would help get the missing information."
