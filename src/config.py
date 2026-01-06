@@ -8,24 +8,17 @@ class EvaluationConfig:
     """Controls which pipeline stages to run and how many samples."""
     building_corpus_from_scratch: bool = False
     ingest_corpus: bool = False
-    number_of_samples_in_corpus: int = 100
-    benchmark: str = "TwoWikiMultiHop"  # 'HotPotQA', 'TwoWikiMultiHop', 'MuSiQuE'
-    answering_questions: bool = True
-    evaluating_answers: bool = True
+    number_of_samples_in_corpus: int = 1
+    benchmark: str = "MuSiQuE"  # 'HotPotQA', 'TwoWikiMultiHop', 'MuSiQuE'
+    answering_questions: bool = False
+    evaluating_answers: bool = False
     evaluation_engine: str = "DeepEval"
     evaluation_metrics: List[str] = None
-    dashboard: bool = True
+    dashboard: bool = False
     delete_at_end: bool = False
-    record_context_graphs: bool = False
+    record_context_graphs: bool = True
     # knowledge subgraph visualization option
-    questions_subset_vis = ["3hop2__668732_223623_162182", "4hop1__802394_153080_159767_81096",
-                            "3hop1__488744_443779_52195", "4hop2__103790_14670_8987_8529",
-                            "4hop1__199362_765799_282674_759393", "3hop1__198276_709625_84283",
-                            "3hop1__67704_237521_291682", "4hop1__860115_798482_131926_13165",
-                            "3hop1__307152_400692_51423",
-                            "3hop1__274148_792411_51423", "3hop1__398232_326948_78782",
-                            "4hop1__88342_75218_128008_67954",
-                            "4hop3__312119_132409_371500_35031"]
+    questions_subset_vis = ["2hop__67660_81007"]
 
     # subset of questions for knowledge subgraph visualization
 
@@ -43,9 +36,9 @@ class FilePathConfig:
     templates_folder: str = "/app/files/templates"
     graphs_folder: str = "/app/files/graphs"
 
-    questions_file_name: str = "2wiki_100"
-    corpus_file_name: str = "2wiki_corpus_100"
-    answers_file_name: str = "test_phi"
+    questions_file_name: str = "musique_test"
+    corpus_file_name: str = "musique_corpus_test"
+    answers_file_name: str = "musique_test"
 
     @property
     def questions_file(self) -> str:
@@ -71,7 +64,7 @@ class FilePathConfig:
 @dataclass
 class DatabaseConfig:
     """Database connection configuration."""
-    NEO4J_URL = os.environ['NEO4J_NEW_URL']
+    NEO4J_URL = os.environ['NEO4J_URL']  # 'NEO4J_URL' or 'NEO4J_NEW_URL' if you don't want to delete existing data
     NEO4J_USER = os.environ['NEO4J_USER']
     NEO4J_PASSWORD = os.environ['NEO4J_PASSWORD']
 
@@ -81,6 +74,7 @@ class LLMConfig:
     """Language model and RAG parameters."""
     ollama_url: str = os.environ['OLLAMA_URL']
     model_name: str = "phi4"
+    embedding_model_name: str = "BAAI/bge-large-en-v1.5"
     templates_folder = '/app/files/templates'
 
     ingestion_type: str = "advanced_knowledge_graph"

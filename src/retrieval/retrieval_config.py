@@ -12,7 +12,7 @@ class Neo4jConfig:
 @dataclass
 class EmbeddingConfig:
     """Embedding model configuration."""
-    model_name: str = "BAAI/bge-large-en-v1.5"
+    model_name: str
 
 
 @dataclass

@@ -13,9 +13,13 @@ class TwoWikiMultihopAdapter(BaseBenchmarkAdapter):
         "filename": "/app/datasets/2wikimultihop_dev.json",
         "URL": "https://huggingface.co/datasets/voidful/2WikiMultihopQA/resolve/main/dev.json",
     }
-    encountered_docs = dict()
-    # TODO: change this into properly initialized parameter
-    embedding_pipeline = EmbeddingPipeline()
+
+    def __init__(self, embedding_model: str = "BAAI/bge-large-en-v1.5"):
+        """
+        Initializes the MusiqueQAAdapter with an embedding pipeline and encountered documents.
+        """
+        self.embedding_pipeline = EmbeddingPipeline(model_name=embedding_model)
+        self.encountered_docs = {}
 
     def _get_corpus_entries(self, item: dict[str, Any]) -> List[str]:
         """Extracts corpus entries from the paragraphs of an item."""

@@ -26,8 +26,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 # Graph retrieval configuration thresholds
 DEFAULT_ACTIVATION_THRESHOLD = 0.5
-DEFAULT_PRUNING_THRESHOLD = 0.45
-DEFAULT_NORMALIZATION_PARAMETER = 0.4
+DEFAULT_PRUNING_THRESHOLD = 0.3
+DEFAULT_NORMALIZATION_PARAMETER = 0.3
 
 
 # ============================================================================
@@ -145,7 +145,8 @@ def create_ingestor(config_db: DatabaseConfig, config_llm: LLMConfig):
         ollama_url=config_llm.ollama_url,
         chunking_method=config_llm.chunking,
         chunk_size=config_llm.chunk_size_ingestion,
-        overlap_size=config_llm.overlap_size_ingestion
+        overlap_size=config_llm.overlap_size_ingestion,
+        embedding_model_name=config_llm.embedding_model_name
     )
 
 
@@ -170,7 +171,8 @@ def create_rag_agent(config_db: DatabaseConfig, config_llm: LLMConfig):
         reasoning=config_llm.reasoning_enabled,
         reasoning_steps=config_llm.reasoning_steps,
         reasoning_prompt_loc=config_llm.reasoning_prompt_loc,
-        answering_prompt_loc=config_llm.answering_prompt_loc
+        answering_prompt_loc=config_llm.answering_prompt_loc,
+        embedding_model_name=config_llm.embedding_model_name
     )
 
 
@@ -225,7 +227,8 @@ async def run_corpus_building_stage(
     start_time = time.time()
 
     # Build corpus from benchmark
-    corpus_builder = CorpusBuilderExecutor(ingestion_pipeline=ingestion_pipeline)
+    corpus_builder = CorpusBuilderExecutor(ingestion_pipeline=ingestion_pipeline,
+                                           embedding_model=config_llm.embedding_model_name)
     questions, corpus = await corpus_builder.build_corpus(
         limit=config_eval.number_of_samples_in_corpus,
         benchmark=config_eval.benchmark,

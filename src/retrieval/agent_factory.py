@@ -30,6 +30,7 @@ class AgentFactory:
             reasoning_prompt_loc: str,
             reasoning: bool = True,
             reasoning_steps: int = 3,
+            embedding_model_name: str = "BAAI/bge-large-en-v1.5",
             **agent_specific_kwargs
     ) -> RAGAgent:
         """Create a RAG agent with the specified configuration. 
@@ -45,6 +46,7 @@ class AgentFactory:
             reasoning_prompt_loc: Path to reasoning prompt file. 
             reasoning: Enable reasoning steps.
             reasoning_steps: Maximum reasoning iterations.
+            embedding_model_name: Name of the embedding model.
             **agent_specific_kwargs: Additional agent-specific parameters.
 
         Returns:
@@ -62,7 +64,7 @@ class AgentFactory:
         config = AgentConfig(
             model_name=model_name,
             neo4j=Neo4jConfig(url=neo4j_url, username=neo4j_username, password=neo4j_pw),
-            embedding=EmbeddingConfig(),
+            embedding=EmbeddingConfig(model_name=embedding_model_name),
             retrieval=RetrievalConfig(**{k: v for k, v in agent_specific_kwargs.items()
                                          if k in RetrievalConfig.__dataclass_fields__}),
             reasoning=ReasoningConfig(enabled=reasoning, max_steps=reasoning_steps),

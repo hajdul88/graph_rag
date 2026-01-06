@@ -13,10 +13,12 @@ class IngestorFactory:
                      ollama_url: str = "",
                      chunking_method: str = "word_based",
                      chunk_size: int = 500,
-                     overlap_size: int = 100):
+                     overlap_size: int = 100,
+                     embedding_model_name: str = "BAAI/bge-large-en-v1.5"):
         if ingestor_type == 'basic':
             return BasicIngestor(neo4j_url=neo4j_url, neo4j_user=neo4j_username, neo4j_password=neo4j_pw,
-                                 chunking_method=chunking_method, chunk_size=chunk_size, overlap_size=overlap_size)
+                                 chunking_method=chunking_method, chunk_size=chunk_size, overlap_size=overlap_size,
+                                 model_name_embedding=embedding_model_name)
         elif ingestor_type == "advanced_knowledge_graph":
             return AdvancedKGIngestor(neo4j_url=neo4j_url, neo4j_user=neo4j_username, neo4j_password=neo4j_pw,
                                       template_ner_loc=ner_template, template_re_loc=re_template,
@@ -25,6 +27,7 @@ class IngestorFactory:
                                       ollama_url=ollama_url,
                                       chunking_method=chunking_method,
                                       chunk_size=chunk_size,
-                                      overlap_size=overlap_size)
+                                      overlap_size=overlap_size,
+                                      model_name_embedding=embedding_model_name)
         else:
             raise ValueError(f"Unknown ingestor type: {ingestor_type}")

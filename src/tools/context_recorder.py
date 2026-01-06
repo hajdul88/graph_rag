@@ -12,7 +12,7 @@ class GraphRetriever:
                  embedding_model: str = "BAAI/bge-large-en-v1.5",
                  k_hop: int = 4,
                  seed_entities: int = 3,
-                 normalization_parameter: float = 0.4,
+                 normalization_parameter: float = 0.3,
                  neo4j_url: str = "",
                  neo4j_username: str = "",
                  neo4j_pw: str = "",
