@@ -1,4 +1,3 @@
-"""Abstract base class for RAG agents."""
 from abc import ABC, abstractmethod
 from typing import Dict
 from .retrieval_config import AgentConfig
