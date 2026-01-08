@@ -1,4 +1,3 @@
-"""Modified Diffusion BFS Agent implementation."""
 import json
 import time
 from typing import Dict, List
