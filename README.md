@@ -108,6 +108,10 @@ This project implements a **Graph-based RAG system** that improves document retr
    cd graph_rag
    ```
 
+⚠️ Before proceeding, ensure the `LLM_ENDPOINT_URL` environment variable is configured in both `docker-compose.yml` and `Dockerfile`.
+
+
+
 2. **Start all services** (Neo4j + App):
    ```bash
    docker-compose up -d
@@ -118,6 +122,8 @@ This project implements a **Graph-based RAG system** that improves document retr
    - Start two Neo4j instances (primary and secondary)
    - Start the application container
 
+⚠️ To use the app with the MuSiQuE benchmark, download the dataset from [this link](https://drive.google.com/file/d/1tGdADlNjWFaHLeZZGShh2IRcpO6Lv24h/view?usp=sharing), extract the `musique_ans_v1.0_dev.jsonl` file to the `datasets` directory, and rename it to `musique_data.jsonl`.
+ 
 3. **Verify services are running**:
    ```bash
    docker-compose ps
