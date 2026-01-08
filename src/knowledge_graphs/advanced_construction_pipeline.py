@@ -48,7 +48,7 @@ class AdvancedKGConstructor:
     """
 
     def __init__(self, template_ner_loc: str, template_re_loc: str, embedding_pipeline: Any,
-                 ollama_url: str,
+                 llm_endpoint_url: str,
                  ner_model: str = "qwen2.5:3b", re_model: str = "hermes3"):
         """Initializes the KnowledgeGraphConstructor.
 
@@ -61,13 +61,13 @@ class AdvancedKGConstructor:
             template_re_loc: The file path to the RE template.
             embedding_pipeline: An instance of an embedding pipeline for creating
                 embeddings from textual data.
-            ollama_url: URL for the Ollama API endpoint.
+            llm_endpoint_url: URL for the LLM API endpoint.
             ner_model: The language model identifier to be used for NER.
                 Defaults to "qwen2.5:3b".
             re_model: The language model identifier to be used for RE.
                 Defaults to "hermes3".
         """
-        self.client = Client(host=ollama_url, timeout=10 * 60)
+        self.client = Client(host=llm_endpoint_url, timeout=10 * 60)
         self.embedding_pipeline = embedding_pipeline
         with open(template_ner_loc, 'r') as file:
             self.template_ner = file.read()

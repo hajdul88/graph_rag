@@ -26,6 +26,6 @@ WORKDIR /app/src
 ENV NEO4J_URL="bolt://neo4j:7687"
 ENV NEO4J_USER="neo4j"
 ENV NEO4J_PASSWORD="test1234"
-ENV OLLAMA_URL = "https://graph-rag-research--ollama-ollama-serve.modal.run/v1"
+ENV LLM_ENDPOINT_URL = ""
 
 CMD ["poetry", "run", "python", "run_eval.py"]

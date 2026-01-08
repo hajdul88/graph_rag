@@ -53,7 +53,7 @@ class DecompositionAgent(RAGAgent):
             config:  AgentConfig instance with all configuration. 
         """
         super().__init__(config)
-        self.client = Client(host=config.ollama_url)
+        self.client = Client(host=config.llm_endpoint_url)
         self.driver = GraphDatabase.driver(
             config.neo4j.url,
             auth=(config.neo4j.username, config.neo4j.password)

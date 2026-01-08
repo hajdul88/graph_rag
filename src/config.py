@@ -9,7 +9,7 @@ class EvaluationConfig:
     building_corpus_from_scratch: bool = True
     ingest_corpus: bool = True
     number_of_samples_in_corpus: int = 1
-    benchmark: str = "MuSiQuE"  # 'HotPotQA', 'TwoWikiMultiHop', 'MuSiQuE'
+    benchmark: str = "MuSiQuE"  # 'TwoWikiMultiHop', 'MuSiQuE'
     answering_questions: bool = True
     evaluating_answers: bool = True
     evaluation_engine: str = "DeepEval"
@@ -72,7 +72,7 @@ class DatabaseConfig:
 @dataclass
 class LLMConfig:
     """Language model and RAG parameters."""
-    ollama_url: str = os.environ['OLLAMA_URL']
+    endpoint_url: str = os.environ['LLM_ENDPOINT_URL']
     model_name: str = "phi4"
     embedding_model_name: str = "BAAI/bge-large-en-v1.5"
     templates_folder = '/app/files/templates'

@@ -25,7 +25,7 @@ class AgentFactory:
             neo4j_url: str,
             neo4j_username: str,
             neo4j_pw: str,
-            ollama_url: str,
+            llm_endpoint_url: str,
             answering_prompt_loc: str,
             reasoning_prompt_loc: str,
             reasoning: bool = True,
@@ -41,7 +41,7 @@ class AgentFactory:
             neo4j_url:  Neo4j database URL.
             neo4j_username: Neo4j username.
             neo4j_pw: Neo4j password.
-            ollama_url: Ollama API URL.
+            llm_endpoint_url: LLM API URL.
             answering_prompt_loc: Path to answering prompt file.
             reasoning_prompt_loc: Path to reasoning prompt file. 
             reasoning: Enable reasoning steps.
@@ -68,7 +68,7 @@ class AgentFactory:
             retrieval=RetrievalConfig(**{k: v for k, v in agent_specific_kwargs.items()
                                          if k in RetrievalConfig.__dataclass_fields__}),
             reasoning=ReasoningConfig(enabled=reasoning, max_steps=reasoning_steps),
-            ollama_url=ollama_url,
+            llm_endpoint_url=llm_endpoint_url,
             answering_prompt_loc=answering_prompt_loc,
             reasoning_prompt_loc=reasoning_prompt_loc,
         )

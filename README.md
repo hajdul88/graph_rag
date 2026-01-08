@@ -1,31 +1,28 @@
 # Leveraging Spreading Activation for Improved Document Retrieval in Knowledge-Graph-Based RAG Systems
 
-This repository contains the experimental code for the paper **"Leveraging Spreading Activation for Improved Document Retrieval in Knowledge-Graph-Based RAG Systems"**. The project implements a novel Retrieval-Augmented Generation (RAG) system that enhances document retrieval for complex multi-hop reasoning questions by treating information as interconnected graphs and using activation signals to traverse relationships and find related evidence.
-
+This repository contains implementation code for a testbed designed to evaluate a novel Retrieval-Augmented Generation (RAG) system proposed in the paper *“Leveraging Spreading Activation for Improved Document Retrieval in Knowledge-Graph-Based RAG Systems.”* The system enhances document retrieval for complex multi-hop reasoning by treating information as an interconnected graph and using spreading-activation signals to traverse relationships and identify relevant evidence.
 ## Table of Contents
 
 - [Overview](#overview)
 - [Key Features](#key-features)
-- [System Architecture](#system-architecture)
+- [SA-RAG System Architecture](#sa-rag-system-architecture)
 - [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Quick Start with Docker](#quick-start-with-docker)
+- [Installation and Setup](#installation-and-setup)
 - [Configuration Guide](#configuration-guide)
   - [Evaluation Configuration](#evaluation-configuration)
   - [Model & LLM Configuration](#model--llm-configuration)
   - [Retrieval & Spreading Activation Parameters](#retrieval--spreading-activation-parameters)
   - [File Paths Configuration](#file-paths-configuration)
   - [Database Configuration](#database-configuration)
-- [Running Experiments](#running-experiments)
-- [Pipeline Stages](#pipeline-stages)
-- [Advanced Configuration](#advanced-configuration)
+- [Run Full Pipeline](#run-full-pipeline)
+    - [Monitor Execution](#monitor-execution)
 - [Visualization](#visualization)
-- [Troubleshooting](#troubleshooting)
+- [Citation](#citation)
 - [License](#license)
 
 ## Overview
 
-This project implements a **Graph-based Retrieval-Augmented Generation (RAG)** system that improves document retrieval for complex questions requiring multi-hop reasoning. Unlike traditional RAG systems that treat documents as isolated chunks, this system: 
+This project implements a **Graph-based RAG system** that improves document retrieval for complex questions requiring multi-hop reasoning. Unlike traditional RAG systems that treat documents as isolated chunks, this system: 
 
 1. **Creates a Knowledge Graph**: Documents are ingested and converted into a structured knowledge graph stored in Neo4j, with entities, relationships, and document chunks as nodes.
 
@@ -35,25 +32,18 @@ This project implements a **Graph-based Retrieval-Augmented Generation (RAG)** s
 
 4. **Generates Reasoning Traces**: The system produces interpretable reasoning steps showing how it navigated the graph to arrive at answers.
 
-### Key Concepts
-
-- **Spreading Activation**: An algorithm that simulates activation spreading through a semantic network, where nodes become active based on initial query relevance and propagate activation to connected nodes. 
-- **Knowledge Graph**: A structured representation of documents where entities are nodes and relationships (e.g., "mentions", "answers") are edges.
-- **Multi-hop Reasoning**: The ability to connect evidence across multiple documents to answer complex questions.
-- **Neo4j Database**: A graph database optimized for storing and querying knowledge graphs efficiently.
-
 ## Key Features
+- **NLP Pipeline for Knowledge Graph Creation**: Automates entity and relation extraction for knowledge graph construction.
+- **Implementation of Baseline RAG Pipelines**: Includes implementation of several RAG pipelines used in the paper
+- **Iterative Retrieval and Reasoning Feature**: Implements multi-step retrieval and reasoning.
+- **Query Decomposition Feature**: Supports breaking down multi-hop questions into sub-questions.
+- **Spreading Activation Retrieval**: Implements a novel document retrieval method based on the spreading activation algorithm.
+- **Flexible Benchmarking**: Supports MuSiQuE and TwoWikiMultiHop datasets.
+- **Comprehensive Evaluation**: Provides built-in evaluation metrics (EM, F1) and dashboard generation.
+- **Graph Visualization**: Visualizes retrieved subgraphs and spreading activation patterns.
+- **Containerized Deployment**: Uses Docker and Docker Compose for reproducible experiments.
 
-- ✅ **Spreading Activation Retrieval**: Novel activation-based document retrieval using graph traversal
-- ✅ **Multi-hop Reasoning**: Answer questions requiring evidence from multiple documents
-- ✅ **Flexible Benchmarking**: Support for MuSiQuE, HotPotQA, and TwoWikiMultiHop datasets
-- ✅ **Advanced NLP Pipeline**: Automatic entity and relation extraction for knowledge graph construction
-- ✅ **Configurable Agents**: Multiple RAG agent implementations (diffusion-based, baseline, hybrid, decomposition)
-- ✅ **Comprehensive Evaluation**: Built-in evaluation metrics (EM, F1) and dashboard generation
-- ✅ **Graph Visualization**:  Visualize retrieved subgraphs and spreading activation patterns
-- ✅ **Containerized Deployment**: Docker and Docker Compose for reproducible experiments
-
-## System Architecture
+## SA-RAG System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -63,7 +53,7 @@ This project implements a **Graph-based Retrieval-Augmented Generation (RAG)** s
                          ▼
         ┌────────────────────────────────┐
         │  1. Create Query Embedding     │
-        │     (BAAI/bge-large-en-v1.5)  │
+        │     (BAAI/bge-large-en-v1.5)   │
         └────────────────┬───────────────┘
                          │
                          ▼
@@ -74,12 +64,12 @@ This project implements a **Graph-based Retrieval-Augmented Generation (RAG)** s
                          │
                          ▼
         ┌──────────────────────────────────────────┐
-        │  3. Spreading Activation (k_hop=3)      │
-        │     - Activate initial results          │
-        │     - Propagate activation through      │
-        │       relationships (3 hops)            │
-        │     - Prune inactive nodes              │
-        │     - Normalize scores                  │
+        │  3. Spreading Activation (k_hop=3)       │
+        │     - Activate initial results           │
+        │     - Propagate activation through       │
+        │       relationships (3 hops)             │
+        │     - Prune inactive nodes               │
+        │     - Normalize scores                   │
         └────────────────┬─────────────────────────┘
                          │
                          ▼
@@ -91,81 +81,73 @@ This project implements a **Graph-based Retrieval-Augmented Generation (RAG)** s
                          │
                          ▼
         ┌────────────────────────────────────────┐
-        │  5. Answer Generation                   │
-        │     Combine reasoning + retrieved       │
-        │     documents to generate final answer  │
+        │  5. Answer Generation                  │
+        │     Combine reasoning + retrieved      │
+        │     documents to generate final answer │
         └────────────────┬───────────────────────┘
                          │
                          ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  ANSWER + REASONING TRACE + RETRIEVED DOCUMENTS               │
+│  ANSWER + REASONING TRACE + RETRIEVED DOCUMENTS                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ## Prerequisites
 
 - **Python**:  3.11 or higher
-- **Docker & Docker Compose**: For containerized execution
+- **Docker & Docker Compose**: For containerized execution (recommended)
 - **Neo4j**: Running via Docker (recommended) or existing instance
 - **Ollama**: For running LLM locally or accessible via network
+- **Poetry**: Python dependency management (for local installation)
 
-## Installation
+## Installation and Setup
 
-### Option 1: Docker (Recommended)
+1. **Clone the repository**: 
+   ```bash
+   git clone https://github.com/hajdul88/graph_rag.git
+   cd graph_rag
+   ```
 
-```bash
-git clone https://github.com/hajdul88/graph_rag.git
-cd graph_rag
-
-# Start all services (Neo4j + App)
-docker-compose up
-```
-
-The `docker-compose.yml` starts:
-- **neo4j**: Primary Neo4j instance (port 7687 for Bolt, 7474 for Web UI)
-- **neo4j_new**: Secondary Neo4j instance (port 7688 for Bolt, 7475 for Web UI)
-- **app**: Main application container
-
-### Option 2: Local Installation
-
-```bash
-git clone https://github.com/hajdul88/graph_rag. git
-cd graph_rag
-
-# Create virtual environment
-python3. 11 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies using Poetry
-pip install poetry==1.6.1
-poetry install
-
-# Ensure Neo4j is running on bolt://localhost:7687
-# Ensure Ollama is running (or accessible at configured URL)
-```
-
-## Quick Start with Docker
-
-1. **Start services**:
+2. **Start all services** (Neo4j + App):
    ```bash
    docker-compose up -d
    ```
 
-2. **Run experiments**:
-   The container automatically runs `src/run_eval.py` which executes the entire pipeline: 
+   This will: 
+   - Build the Docker image for the application
+   - Start two Neo4j instances (primary and secondary)
+   - Start the application container
+
+3. **Verify services are running**:
    ```bash
-   # View logs
-   docker-compose logs -f app
+   docker-compose ps
    ```
 
-3. **Access Neo4j Browser**:
-   - Primary instance: http://localhost:7474 (user: neo4j, password: test1234)
-   - Secondary instance:  http://localhost:7475
+   Expected output:
+   ```
+   NAME                COMMAND                  SERVICE             STATUS
+   graph_rag-app-1     "poetry run python ..."  app                 Up (healthy)
+   graph_rag-neo4j-1   "/sbin/tini -- /startup" neo4j               Up (healthy)
+   graph_rag-neo4j_new-1  "/sbin/tini -- /startup" neo4j_new        Up (healthy)
+   ```
 
-4. **View results**:
+**Access services**:
+- **Neo4j Browser (Primary)**: http://localhost:7474
+  - Username: `neo4j`
+  - Password: `test1234`
+- **Neo4j Browser (Secondary)**: http://localhost:7475
+  - Username: `neo4j`
+  - Password: `test1234`
+- **Application logs**: `docker-compose logs -f app`
+
+5. **Stop services**:
    ```bash
-   # Generated files in ./results/
-   ls results/
+   docker-compose down
+   ```
+
+   To also remove data volumes:
+   ```bash
+   docker-compose down -v
    ```
 
 ## Configuration Guide
@@ -182,7 +164,7 @@ class EvaluationConfig:
     building_corpus_from_scratch: bool = True      # Build new corpus or skip
     ingest_corpus:  bool = True                      # Ingest corpus into Neo4j
     number_of_samples_in_corpus: int = 1            # Number of benchmark samples to process
-    benchmark:  str = "MuSiQuE"                      # 'MuSiQuE', 'HotPotQA', 'TwoWikiMultiHop'
+    benchmark:  str = "MuSiQuE"                      # 'MuSiQuE', 'TwoWikiMultiHop'
     answering_questions: bool = True                # Generate answers
     evaluating_answers: bool = True                 # Compute evaluation metrics
     evaluation_engine: str = "DeepEval"             # Evaluation framework
@@ -191,12 +173,13 @@ class EvaluationConfig:
     delete_at_end: bool = False                     # Delete Neo4j data after completion
     record_context_graphs: bool = True              # Save retrieved subgraph visualizations
     questions_subset_vis: List[str] = ["2hop__67660_81007"]  # Questions to visualize
-```
+``` 
 
-**Key parameters**:
-- `number_of_samples_in_corpus`: Start with 1-5 for testing, increase for full experiments
-- `benchmark`: Choose dataset (MuSiQuE recommended, multi-hop questions)
+**Key parameters**: 
+- `number_of_samples_in_corpus`: ⚠️ Full benchmark can take hours.  Start with 1-5 samples for testing.
+- `benchmark`: Choose dataset (MuSiQuE ot TwoWikiMultiHop)
 - `delete_at_end`: Set to `False` to preserve Neo4j data for inspection
+- `record_context_graphs`: Set to `True` to save graphs for visualization (availabel only for MuSiQuE)
 
 ### Model & LLM Configuration
 
@@ -206,7 +189,7 @@ Configure language models, embedding models, and ingestion pipeline:
 @dataclass
 class LLMConfig:
     # LLM & Embedding Models
-    ollama_url: str = os.environ['OLLAMA_URL']           # Ollama service endpoint
+    endpoint_url: str = os.environ['OLLAMA_URL']           # LLM API endpoint
     model_name: str = "phi4"                             # LLM model for reasoning/answering
     embedding_model_name: str = "BAAI/bge-large-en-v1.5" # Embedding model for semantic search
     
@@ -225,10 +208,10 @@ class LLMConfig:
 ```
 
 **Available agent types**:
-- `modified_diffusion_agent`: **Recommended** - Uses spreading activation (main paper contribution)
+- `modified_diffusion_agent`:  Uses spreading activation (main paper contribution)
 - `baseline_cot`: Traditional chain-of-thought RAG without graph traversal
-- `hybrid`: Combines diffusion and decomposition strategies
 - `decomposition_agent`: Decomposes questions into sub-questions
+- `hybrid`: Combines spreading activation and decomposition strategies
 
 ### Retrieval & Spreading Activation Parameters
 
@@ -238,65 +221,50 @@ Core parameters controlling graph traversal and activation:
 @dataclass
 class LLMConfig:
     # ===== GRAPH TRAVERSAL =====
-    K_HOP: int = 3                          # Number of hops for spreading activation
-                                            # Higher = broader search, more compute
-                                            # Lower = focused search, faster
+    K_HOP: int = 3                          # K-hop neighborhood around initially activated nodes
+                                            # Higher = find more distant evidence
+                                            # Lower = faster, better reasoning
+    
+    
     
     # ===== INITIAL RETRIEVAL =====
     RETRIEVE_K: int = 4                     # Number of initial documents from semantic search
                                             # These become the seed nodes for activation
     
-    ACTIVATING_DESCRIPTIONS: int = 4        # Number of candidate nodes activated per hop
-                                            # Controls branching factor in graph traversal
+    ACTIVATING_DESCRIPTIONS: int = 4        # Deprecated: Should match RETRIEVE_K
     
     # ===== ACTIVATION THRESHOLDS =====
-    ACTIVATION_THRESHOLD:  float = 0.5       # Minimum score for a node to remain active
+    ACTIVATION_THRESHOLD:  float = 0.5      # Minimum score for nodes and links to become active
                                             # Lower = keep more nodes, broader context
                                             # Higher = keep only strongest connections
     
-    PRUNING_THRESHOLD: float = 0.45         # Score below which nodes are removed
-                                            # Should be < ACTIVATION_THRESHOLD
-                                            # Removes weakly activated nodes from memory
+    PRUNING_THRESHOLD: float = 0.45         # Filter out documents whose cosine similarity to input query
+                                            # is below this threshold after activation
+
     
     # ===== NORMALIZATION =====
-    NORMALIZATION_PARAMETER: float = 0.4    # Decay factor for activation across hops
-                                            # Lower = faster decay (emphasis on close nodes)
-                                            # Higher = slower decay (broader influence)
+    NORMALIZATION_PARAMETER: float = 0.4    # Normalization constant for edge weights
+
 ```
-
-**Tuning Guide**: 
-
-| Parameter | Increase | Decrease |
-|-----------|----------|----------|
-| `K_HOP` | Find distant evidence | Speed up / reduce hallucination |
-| `RETRIEVE_K` | Broader initial context | Focus on most relevant only |
-| `ACTIVATING_DESCRIPTIONS` | Explore more connections | Reduce branching factor |
-| `ACTIVATION_THRESHOLD` | Only keep strong links | Keep more weak connections |
-| `NORMALIZATION_PARAMETER` | Distant nodes stay relevant | Emphasize nearby nodes |
 
 **Example configurations**:
 
 ```python
-# ✅ Balanced (Default)
-K_HOP = 3
-RETRIEVE_K = 4
-ACTIVATING_DESCRIPTIONS = 4
+# MuSiQuE Recommended
+K_HOP = 4
+RETRIEVE_K = 3
+ACTIVATING_DESCRIPTIONS = 3
 ACTIVATION_THRESHOLD = 0.5
+PRUNING_THRESHOLD = 0.45 
 NORMALIZATION_PARAMETER = 0.4
 
-# 🚀 Fast (fewer hops, focused)
-K_HOP = 2
-RETRIEVE_K = 3
-ACTIVATING_DESCRIPTIONS = 2
-ACTIVATION_THRESHOLD = 0.6
-NORMALIZATION_PARAMETER = 0.3
-
-# 🔍 Comprehensive (more hops, broader search)
-K_HOP = 4
-RETRIEVE_K = 6
-ACTIVATING_DESCRIPTIONS = 6
-ACTIVATION_THRESHOLD = 0.4
-NORMALIZATION_PARAMETER = 0.5
+# TwoWikiMultiHop Recommended
+K_HOP = 3
+RETRIEVE_K = 10
+ACTIVATING_DESCRIPTIONS = 10
+ACTIVATION_THRESHOLD = 0.5
+PRUNING_THRESHOLD = 0.45 
+NORMALIZATION_PARAMETER = 0.4
 ```
 
 ### File Paths Configuration
@@ -324,50 +292,37 @@ Neo4j connection settings:
 ```python
 @dataclass
 class DatabaseConfig:
-    NEO4J_URL: str = os.environ['NEO4J_URL']          # bolt://neo4j:7687
+    NEO4J_URL: str = os.environ['NEO4J_URL']          # bolt://neo4j:7687 (Docker) or bolt://localhost:7687 (Local)
     NEO4J_USER: str = os.environ['NEO4J_USER']        # neo4j
-    NEO4J_PASSWORD: str = os. environ['NEO4J_PASSWORD'] # test1234
+    NEO4J_PASSWORD:  str = os.environ['NEO4J_PASSWORD'] # test1234
 ```
 
 **Tips**:
 - Use `NEO4J_URL` (primary instance) for experiments requiring clean data
 - Use `NEO4J_NEW_URL` (secondary instance) to preserve existing data
-- Change in Docker environment variables if using local Neo4j
 
-## Running Experiments
-
-### Run Full Pipeline
+## Run Full Pipeline
 
 ```bash
-cd graph_rag
-
-# Using Docker Compose (recommended)
 docker-compose up
-
-# Using local installation
-cd src
-python run_eval.py
+# Pipeline runs automatically
+# View logs: docker-compose logs -f app
 ```
 
 The pipeline automatically executes in order: 
 
 1. **Corpus Building** (if `building_corpus_from_scratch=True`)
-   - Downloads benchmark dataset (MuSiQuE, HotPotQA, etc.)
+   - Loads benchmark datasets
    - Creates corpus JSON file
 
 2. **Corpus Ingestion** (if `ingest_corpus=True`)
-   - Chunks documents (configurable: 500 tokens, 100 overlap)
-   - Extracts entities and relations (via NER/RE)
+   - Chunks documents (configurable:  500 tokens, 100 overlap)
+   - Extracts entities and relations
+   - Creates text embeddings
    - Creates knowledge graph in Neo4j
 
 3. **Question Answering** (if `answering_questions=True`)
-   - Loads questions from file
-   - For each question: 
-     - Creates embedding
-     - Retrieves initial documents
-     - Applies spreading activation
-     - Generates reasoning steps
-     - Produces final answer
+   - Loads questions from file and runs answering logic based on selected RAG pipeline
 
 4. **Evaluation** (if `evaluating_answers=True`)
    - Computes metrics (EM, F1)
@@ -378,7 +333,7 @@ The pipeline automatically executes in order:
    - Saves to `results/{answers_file_name}_dashboard.html`
 
 6. **Graph Recording** (if `record_context_graphs=True`)
-   - Saves retrieved subgraph visualizations
+   - Saves retrieved subgraphs as pickle files
    - Useful for understanding retrieval process
 
 7. **Cleanup** (if `delete_at_end=True`)
@@ -387,18 +342,11 @@ The pipeline automatically executes in order:
 ### Monitor Execution
 
 ```bash
-# View logs (Docker)
+# Docker
 docker-compose logs -f app
-
-# View logs (local)
-# Logs are printed to console
-
-# Access Neo4j Browser
-# Primary:  http://localhost:7474
-# Secondary: http://localhost:7475
 ```
 
-### Example Output
+**Example Output:**
 
 ```
 2026-01-06 11:05:00 - INFO - Corpus Builder started... 
@@ -415,164 +363,6 @@ docker-compose logs -f app
 2026-01-06 11:06:30 - INFO - Evaluation ended...
 2026-01-06 11:06:30 - INFO - Evaluation execution time: 00:00:15
 2026-01-06 11:06:30 - INFO - Dashboard generated successfully
-```
-
-## Pipeline Stages
-
-### Stage 1: Corpus Building
-
-**File**: `src/evaluation_framework/corpus_builder/`
-
-Builds a question-answer corpus from a benchmark dataset: 
-- Downloads from HuggingFace (MuSiQuE, HotPotQA, TwoWikiMultiHop)
-- Extracts questions and golden answers
-- Saves to `/app/files/questions/`
-
-**Control**:  `EvaluationConfig. building_corpus_from_scratch`
-
-### Stage 2: Corpus Ingestion
-
-**File**: `src/ingestion/`
-
-Converts corpus into knowledge graph: 
-
-1. **Chunking**: Splits documents into 500-token chunks with 100-token overlap
-2. **Embedding**: Creates semantic embeddings for each chunk
-3. **NER**: Extracts named entities using LLM + template
-4. **RE**: Extracts relationships between entities using LLM + template
-5. **Storage**: Stores in Neo4j as nodes and relationships
-
-**Control**: `EvaluationConfig.ingest_corpus`, `LLMConfig.chunk_size_ingestion`
-
-### Stage 3: Question Answering
-
-**File**: `src/retrieval/`
-
-Answers questions using spreading activation:
-
-1. **Embedding**: Creates query embedding
-2. **Initial Retrieval**: Semantic search for top-4 relevant documents
-3. **Spreading Activation**:
-   - Initializes activation on retrieved documents
-   - Propagates activation through graph (3 hops)
-   - Prunes low-score nodes based on thresholds
-   - Normalizes scores using decay parameter
-4. **Reasoning**: Generates interpretable multi-step reasoning
-5. **Answer Generation**: LLM produces final answer
-
-**Control**: `LLMConfig.agent_type`, spreading activation parameters
-
-### Stage 4: Evaluation
-
-**File**: `src/evaluation_framework/evaluation/`
-
-Computes metrics comparing generated answers to golden answers: 
-- **EM** (Exact Match): Binary match on normalized strings
-- **F1**:  Token-level overlap between answer and golden answer
-
-**Control**: `EvaluationConfig.evaluation_metrics`
-
-### Stage 5: Dashboard Generation
-
-**File**: `src/tools/summarization. py`
-
-Creates interactive HTML dashboard with:
-- Aggregate metrics (average EM, F1)
-- Per-question breakdown
-- Visualization of retrieval process
-
-**Output**: `results/{answers_file_name}_dashboard.html`
-
-**Control**: `EvaluationConfig.dashboard`
-
-### Stage 6: Graph Recording (Optional)
-
-**File**: `src/tools/context_recorder.py`
-
-Saves retrieved subgraph visualizations for analysis:
-- Records which documents were activated
-- Shows activation levels and connections
-- Useful for understanding retrieval decisions
-
-**Control**: `EvaluationConfig.record_context_graphs`
-
-## Advanced Configuration
-
-### Experiment 1: Compare Agent Types
-
-Test different retrieval strategies:
-
-```python
-# In src/config.py, modify LLMConfig. agent_type: 
-
-# Run 1: Spreading Activation (Paper Contribution)
-agent_type = "modified_diffusion_agent"
-
-# Run 2: Baseline without graph
-agent_type = "baseline_cot"
-
-# Run 3: Hybrid approach
-agent_type = "hybrid"
-
-# Run 4: Question decomposition
-agent_type = "decomposition_agent"
-```
-
-### Experiment 2: Tune Activation Parameters
-
-Find optimal spreading activation settings:
-
-```python
-# Conservative (fewer false positives)
-ACTIVATION_THRESHOLD = 0.6
-PRUNING_THRESHOLD = 0.55
-K_HOP = 2
-RETRIEVE_K = 3
-
-# Aggressive (broader search)
-ACTIVATION_THRESHOLD = 0.4
-PRUNING_THRESHOLD = 0.3
-K_HOP = 4
-RETRIEVE_K = 6
-```
-
-### Experiment 3: Change Embedding Models
-
-Test different embedding quality:
-
-```python
-# High-quality but slower
-embedding_model_name = "BAAI/bge-large-en-v1.5"
-
-# Fast but less precise
-embedding_model_name = "all-MiniLM-L6-v2"
-
-# Domain-specific
-embedding_model_name = "msmarco-distilbert-base-v3"
-```
-
-### Experiment 4: Scale to Full Benchmark
-
-Run on all questions: 
-
-```python
-# In src/config.py
-EvaluationConfig.number_of_samples_in_corpus = 100  # or -1 for all
-```
-
-⚠️ **Warning**: Full benchmark can take hours.  Start with 1-5 samples for testing.
-
-### Experiment 5: Different Benchmarks
-
-```python
-# MuSiQuE (recommended, multi-hop)
-benchmark = "MuSiQuE"
-
-# HotPotQA (multi-hop)
-benchmark = "HotPotQA"
-
-# TwoWikiMultiHop (2-hop questions)
-benchmark = "TwoWikiMultiHop"
 ```
 
 ## Visualization
@@ -607,74 +397,16 @@ visualize_diffusion(G, title='Spreading Activation Pattern')
 - 🟠 **Orange edges**: Relevant relationships
 - ⚫ **Gray edges**: Other relationships
 
-## Troubleshooting
-
-### Neo4j Connection Issues
-
-```
-Error: Could not connect to bolt://neo4j:7687
-```
-
-**Solutions**:
-1. Verify Neo4j is running:  `docker-compose ps`
-2. Check Neo4j logs: `docker-compose logs neo4j`
-3. Wait for startup (Neo4j can take 10-15 seconds): `sleep 20 && docker-compose up app`
-4. Verify credentials in `docker-compose.yml` match `src/config.py`
-
-### Ollama Connection Issues
-
-```
-Error: Connection refused to OLLAMA_URL
-```
-
-**Solutions**:
-1. Check Ollama is running on configured URL
-2. Update `OLLAMA_URL` in `docker-compose.yml`
-3. Pull required model: `ollama pull phi4`
-
-### Out of Memory
-
-**Solutions**:
-1. Reduce `number_of_samples_in_corpus`
-2. Reduce `K_HOP` (fewer graph hops)
-3. Reduce `RETRIEVE_K` (fewer initial documents)
-4. Increase Docker memory limit:  `--memory 8g` in docker-compose.yml
-
-### Slow Ingestion
-
-**Solutions**:
-1. Check Neo4j index creation: `SHOW INDEXES` in Neo4j Browser
-2. Reduce `chunk_size_ingestion` to process faster
-3. Increase Docker resources
-
-### Empty Results
-
-**Causes**:
-- Benchmark dataset not found
-- Neo4j empty (corpus not ingested)
-- Semantic search not returning results
-
-**Solutions**:
-1. Check files:  `ls files/questions/`
-2. Verify ingestion: query Neo4j Browser
-3. Increase `RETRIEVE_K` for less restrictive search
-
-## Performance Tips
-
-1. **First Run**: Expect 5-15 minutes for corpus ingestion + first question
-2. **Subsequent Runs**:  Use `building_corpus_from_scratch = False` to skip ingestion
-3. **Preserve Data**: Set `delete_at_end = False` to keep Neo4j between runs
-4. **Parallel Processing**: Currently single-threaded; multi-threading possible in `answer_generation_executor. py`
-
 ## Citation
 
 If you use this code, please cite the paper:
 
 ```bibtex
-@article{spreading_activation_rag,
+@article{pavlovic2025leveraging,
   title={Leveraging Spreading Activation for Improved Document Retrieval in Knowledge-Graph-Based RAG Systems},
-  author={Hajdul, ... },
-  year={2026}
+  author={Pavlovi{\'c}, Jovan and Kr{\'e}sz, Mikl{\'o}s and Hajdu, L{\'a}szl{\'o}},
+  journal={arXiv preprint arXiv:2512.15922},
+  year={2025}
 }
 ```
 
