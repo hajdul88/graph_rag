@@ -1,4 +1,3 @@
-"""Decomposition Agent for question decomposition and sequential retrieval."""
 import json
 import logging
 from typing import Dict, List
