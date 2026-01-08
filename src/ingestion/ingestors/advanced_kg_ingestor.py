@@ -16,7 +16,7 @@ class AdvancedKGIngestor(BaseIngestor):
                  chunking_method: str = "word_based",
                  chunk_size: int = 500,
                  overlap_size: int = 200,
-                 ollama_url: str = ""):
+                 llm_endpoint_url: str = ""):
         self.chunking_method = chunking_method
         self.chunk_size = chunk_size
         self.overlap_size = overlap_size
@@ -25,7 +25,7 @@ class AdvancedKGIngestor(BaseIngestor):
         self.kg_pipeline = AdvancedKGConstructor(template_re_loc=template_re_loc, template_ner_loc=template_ner_loc,
                                                  ner_model=ner_model, re_model=re_model,
                                                  embedding_pipeline=self.embed_pipeline,
-                                                 ollama_url=ollama_url)
+                                                 llm_endpoint_url=llm_endpoint_url)
 
     def create_entity_description(self, session, e_description, e_embedding, e_name):
         query = """

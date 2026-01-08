@@ -42,6 +42,6 @@ class AgentConfig:
     embedding: EmbeddingConfig = field(default_factory=EmbeddingConfig)
     retrieval: RetrievalConfig = field(default_factory=RetrievalConfig)
     reasoning: ReasoningConfig = field(default_factory=ReasoningConfig)
-    ollama_url: str = ''
+    llm_endpoint_url: str = ''
     answering_prompt_loc: str = ""
     reasoning_prompt_loc: str = ""
