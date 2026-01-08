@@ -12,7 +12,7 @@ class MusiqueQAAdapter(BaseBenchmarkAdapter):
     """Adapter for the Musique QA dataset with local file loading and optional download."""
 
     dataset_info = {
-        "filename": "/app/datasets/musique_ans_v1.0_dev.jsonl",
+        "filename": "/app/datasets/musique_data.jsonl",
         "download_url": "https://drive.google.com/file/d/1tGdADlNjWFaHLeZZGShh2IRcpO6Lv24h/view?usp=sharing"
     }
 
